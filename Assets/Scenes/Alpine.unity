@@ -494,7 +494,9 @@ MonoBehaviour:
   waterPrefab: {fileID: 5364120516538139519, guid: 2d7efa14aea7f634e92a64b785a991b7, type: 3}
   randomOpenDensity: 0.1
   timestep: 0
+  high_score: 0
   timestepTXT: {fileID: 1690119004}
+  scoreTXT: {fileID: 1868545398}
 --- !u!1 &1690119002
 GameObject:
   m_ObjectHideFlags: 0
