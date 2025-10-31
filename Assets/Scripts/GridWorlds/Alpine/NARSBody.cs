@@ -10,8 +10,10 @@ public class NARSBody
     public NARS nars;
     int timesteps_alive = 0;
     public int energy = ENERGY_IN_FOOD;
-
+    public int food_eaten = 0;
     public int movement = 0;
+    public const int MAX_LIFE = 100;
+    public int lifespan = MAX_LIFE;
     public NARSBody(NARS nars)
     {
         this.nars = nars;
@@ -31,7 +33,7 @@ public class NARSBody
         }
         timesteps_alive++;
         energy--;
-
+        lifespan--;
         // enter instinctual goals
         foreach (var goal_data in nars.genome.goals)
         {
@@ -63,6 +65,15 @@ public class NARSBody
  
     public float GetFitness()
     {
-        return (float)movement/timesteps_alive;
+        if(food_eaten > 0)
+        {
+            return food_eaten;
+        }
+        else
+        {
+            float move_score = ((float)movement / timesteps_alive);
+            return move_score;
+        }
+
     }
 }
