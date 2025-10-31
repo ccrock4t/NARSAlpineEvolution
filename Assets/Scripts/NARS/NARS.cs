@@ -47,7 +47,7 @@ public class NARS
     public System.Random random;
 
 
-
+    public NARSGenome genome;
     public NARS(NARSGenome nars_genome)
     {
         this.random = new System.Random();
@@ -63,7 +63,7 @@ public class NARS
 
         this.operation_queue = new List<(int, StatementTerm, float, List<string>)>(); // operations the system has queued to executed
 
-
+        this.genome = nars_genome;
         SetupUsingGenome(nars_genome);
     }
 
@@ -109,7 +109,7 @@ public class NARS
         while (tasks_left > 0)
         {
             Sentence buffer_item = this.global_buffer.take().obj;
-            if(buffer_item is Judgment && buffer_item.statement == NARSGenome.energy_full)
+            if(buffer_item is Judgment && buffer_item.statement == NARSGenome.energy_increasing)
             {
                 int j = 1;
             }
@@ -585,7 +585,7 @@ public class NARS
     void MotorBabble()
     {
         var motor_terms = NARSGenome.MOTOR_TERM_SET;
-        int rnd = UnityEngine.Random.Range(0, motor_terms.Length);
+        int rnd = UnityEngine.Random.Range(0, motor_terms.Count);
         var motor_term = motor_terms[rnd];
         SendInput(new Goal(this, motor_term, new EvidentialValue(1.0f, 0.99f), occurrence_time: current_cycle_number));
     }

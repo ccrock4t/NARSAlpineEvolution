@@ -1,5 +1,5 @@
 using UnityEngine;
-using static GridManager;
+using static DoorKeyGridManager;
 
 public class PlayerController : MonoBehaviour
 {
@@ -46,11 +46,11 @@ public class PlayerController : MonoBehaviour
     bool CanMove(Vector2Int targetPos)
     {
         // Stay in bounds
-        if (targetPos.x < 0 || targetPos.x >= GridManager.Instance.width ||
-            targetPos.y < 0 || targetPos.y >= GridManager.Instance.height)
+        if (targetPos.x < 0 || targetPos.x >= DoorKeyGridManager.Instance.width ||
+            targetPos.y < 0 || targetPos.y >= DoorKeyGridManager.Instance.height)
             return false;
 
-        TileType tile = GridManager.Instance.grid[targetPos.x, targetPos.y];
+        TileType tile = DoorKeyGridManager.Instance.grid[targetPos.x, targetPos.y];
 
         // Handle door logic
         if (tile == TileType.Door && !hasKey)
@@ -68,7 +68,7 @@ public class PlayerController : MonoBehaviour
     // --------------------------------------------------
     void MoveTo(Vector2Int newPos)
     {
-        TileType tile = GridManager.Instance.grid[newPos.x, newPos.y];
+        TileType tile = DoorKeyGridManager.Instance.grid[newPos.x, newPos.y];
 
         switch (tile)
         {
@@ -80,7 +80,7 @@ public class PlayerController : MonoBehaviour
                 hasKey = true;
                 Debug.Log("Picked up the key!");
                 // Remove the key object from grid
-                GridManager.Instance.ClearTileAt(newPos);
+                DoorKeyGridManager.Instance.ClearTileAt(newPos);
                 break;
 
             case TileType.Door:
@@ -88,7 +88,7 @@ public class PlayerController : MonoBehaviour
                 {
                     Debug.Log("Unlocked the door!");
                     // Remove the door object from the grid
-                    GridManager.Instance.ClearTileAt(newPos);
+                    DoorKeyGridManager.Instance.ClearTileAt(newPos);
                 }
                 else
                 {
@@ -103,15 +103,15 @@ public class PlayerController : MonoBehaviour
         }
 
         // Clear old position
-        GridManager.Instance.grid[gridPos.x, gridPos.y] = TileType.Empty;
-        GridManager.Instance.tileObjects[gridPos.x, gridPos.y] = null;
+        DoorKeyGridManager.Instance.grid[gridPos.x, gridPos.y] = TileType.Empty;
+        DoorKeyGridManager.Instance.tileObjects[gridPos.x, gridPos.y] = null;
 
         // Move player
         gridPos = newPos;
         transform.position = new Vector3(gridPos.x, gridPos.y, 0);
 
         // Update grid
-        GridManager.Instance.grid[gridPos.x, gridPos.y] = TileType.Player;
-        GridManager.Instance.tileObjects[gridPos.x, gridPos.y] = gameObject;
+        DoorKeyGridManager.Instance.grid[gridPos.x, gridPos.y] = TileType.Player;
+        DoorKeyGridManager.Instance.tileObjects[gridPos.x, gridPos.y] = gameObject;
     }
 }

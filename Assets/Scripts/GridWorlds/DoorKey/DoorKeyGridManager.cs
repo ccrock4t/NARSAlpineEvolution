@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GridManager : MonoBehaviour
+public class DoorKeyGridManager : MonoBehaviour
 {
     public enum TileType
     {
@@ -31,7 +31,7 @@ public class GridManager : MonoBehaviour
     public TileType[,] grid;
     public GameObject[,] tileObjects; // <---- NEW: all object tracking (not just walls)
 
-    public static GridManager Instance;
+    public static DoorKeyGridManager Instance;
 
     private Vector2Int playerPos, keyPos, doorPos, goalPos;
 

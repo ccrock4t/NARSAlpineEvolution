@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using static AlpineGridManager;
+
+public class NARSBody
+{
+    static IEnumerable<Direction> _directions;
+    public NARS nars;
+    int timesteps_alive = 0;
+    public int energy = ENERGY_IN_FOOD;
+
+    public int movement = 0;
+    public NARSBody(NARS nars)
+    {
+        this.nars = nars;
+    }
+
+    public void Sense(Vector2Int position, AlpineGridManager gridManager)
+    {
+        if (_directions == null) _directions = Enum.GetValues(typeof(Direction)).Cast<Direction>();
+        foreach (var direction in _directions)
+        {
+            Vector2Int neighbor_pos = position + GetMovementVectorFromDirection(direction);
+            if (!IsInBounds(neighbor_pos)) continue;
+            var neighbor_type = gridManager.grid[neighbor_pos.x, neighbor_pos.y];
+            var sensor_term = GetSensorTermForTileTypeAndDirection(neighbor_type, direction);
+            if(sensor_term == null) continue;
+            var sensation = new Judgment(this.nars, sensor_term, new(1.0f, 0.99f));
+        }
+        timesteps_alive++;
+        energy--;
+
+        // enter instinctual goals
+        foreach (var goal_data in nars.genome.goals)
+        {
+            var goal = new Goal(nars, goal_data.statement, goal_data.evidence, occurrence_time: nars.current_cycle_number);
+            nars.SendInput(goal);
+        }
+    }
+
+    public StatementTerm GetSensorTermForTileTypeAndDirection(TileType type, Direction direction)
+    {
+        if(type == TileType.Empty)
+        {
+            return null;
+        }else if(type == TileType.Grass)
+        {
+            return NARSGenome.grass_seen_terms[direction];
+        }
+        else if (type == TileType.Goat)
+        {
+            return NARSGenome.goat_seen_terms[direction];
+        }
+        else if (type == TileType.Water)
+        {
+            return NARSGenome.water_seen[direction];
+        }
+        return null;
+    }
+
+ 
+    public float GetFitness()
+    {
+        return (float)movement/timesteps_alive;
+    }
+}
