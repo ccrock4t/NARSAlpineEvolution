@@ -571,8 +571,13 @@ public class NARS
                 }
                 else
                 {
-                    // no explanations, so babble
-                    MotorBabble();
+
+                    if (NARSGenome.USE_LEARNING())
+                    {
+                        // no explanations, so babble to learn one
+                        MotorBabble();
+                    }
+                   
                 }
               
             }

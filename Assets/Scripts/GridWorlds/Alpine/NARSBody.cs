@@ -30,6 +30,7 @@ public class NARSBody
             var sensor_term = GetSensorTermForTileTypeAndDirection(neighbor_type, direction);
             if(sensor_term == null) continue;
             var sensation = new Judgment(this.nars, sensor_term, new(1.0f, 0.99f));
+            nars.SendInput(sensation);
         }
         timesteps_alive++;
         energy--;

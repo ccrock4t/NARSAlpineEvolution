@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using TMPro;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using static AlpineGridManager;
@@ -72,7 +73,8 @@ public class AlpineGridManager : MonoBehaviour
     public GameObject[,] gridGameobjects; // tracks the single occupant for each tile
     public Agent[,] gridAgents; // tracks the single occupant for each tile
 
-    public Dictionary<Agent,bool> agentsdict = new();
+    Dictionary<Agent, Vector2Int> agentToPos = new();
+
 
 
     public static AlpineGridManager Instance;
@@ -81,10 +83,6 @@ public class AlpineGridManager : MonoBehaviour
     public float high_score;
 
     // --- Tick settings ---
-    [Header("Tick Settings")]
-    [Tooltip("Seconds between simulation steps.")]
-    private float tickSeconds = 0.04f;
-    private float _tickTimer = 0f;
     public const int ENERGY_IN_FOOD = 10;
 
     // Directions: up, down, left, right
@@ -110,10 +108,7 @@ public class AlpineGridManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-
-
-
-        table = new(AnimatTable.SortingRule.sorted,AnimatTable.ScoreType.objective_fitness);
+                table = new(AnimatTable.SortingRule.sorted,AnimatTable.ScoreType.objective_fitness);
     }
     // --- CSV logging ---
     private string _csvPath;
@@ -140,7 +135,7 @@ public class AlpineGridManager : MonoBehaviour
     // Install dir = parent of the .app bundle
     return Directory.GetParent(Application.dataPath).Parent.Parent.FullName;
 #else
-    // Mobile, WebGL, consoles, etc. — use the safe location
+    // Mobile, WebGL, consoles, etc. â€” use the safe location
     return Application.persistentDataPath;
 #endif
     }
@@ -221,7 +216,7 @@ public class AlpineGridManager : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        OnDestroy(); // ensure it’s closed on quit, too
+        OnDestroy(); // ensure itâ€™s closed on quit, too
     }
 
     public void UpdateUI()
@@ -230,23 +225,30 @@ public class AlpineGridManager : MonoBehaviour
         scoreTXT.text = "High Score: " + high_score;
     }
 
+    // How many FixedUpdate steps per simulation tick
+    private int updatesPerTick = 10;
+
+    private int _fixedUpdateCounter = 0;
+
     void FixedUpdate()
     {
-        _tickTimer += Time.deltaTime;
-        if (_tickTimer >= tickSeconds)
+        _fixedUpdateCounter++;
+
+        if (_fixedUpdateCounter >= updatesPerTick)
         {
+            _fixedUpdateCounter = 0;   // reset for next tick
             timestep++;
-            _tickTimer = 0f;
+
             StepSimulation();
 
-            while (agentsdict.Count < NUM_OF_NARS_AGENTS)
+            while (agentToPos.Count < NUM_OF_NARS_AGENTS)
                 SpawnNewAgent();
 
             while (placedGrass < NUM_OF_GRASS)
                 SpawnNewGrass();
 
             UpdateUI();
-            WriteCsvRow();   // <-- add this
+            WriteCsvRow();   // still runs on each tick
         }
     }
 
@@ -259,28 +261,33 @@ public class AlpineGridManager : MonoBehaviour
 
     private void SpawnNewAgent()
     {
-        if (!TryFindRandomEmptyCell(out var pos)) return; // grid full
+       
 
         // Place the visual/object
-        if (!PlaceObject(goatPrefab, pos, TileType.Goat)) return;
+       
 
         int newagent = UnityEngine.Random.Range(0, 50);
         if(newagent == 0 || table.Count() < 2)
         {
+            if (!TryFindRandomEmptyCell(out var pos)) return; // grid full
+            if (!PlaceObject(goatPrefab, pos, TileType.Goat)) return;
             var agent = new Agent();
             gridAgents[pos.x, pos.y] = agent;
-            agentsdict.Add(agent, true);
+            agentToPos.Add(agent, pos);
         }
         else
         {
-            int sexual = UnityEngine.Random.Range(0, 1);
+            int sexual = UnityEngine.Random.Range(0, 2);
             NARSGenome[] new_genomes = GetNewAnimatReproducedFromTable(sexual == 1);
 
             foreach (var genome in new_genomes)
-            {        // Create and register the agent
+            {
+                if (!TryFindRandomEmptyCell(out var pos)) return; // grid full
+                if (!PlaceObject(goatPrefab, pos, TileType.Goat)) continue;
+                // Create and register the agent
                 var agent = new Agent(genome);
                 gridAgents[pos.x, pos.y] = agent;
-                agentsdict.Add(agent, true);
+                agentToPos.Add(agent, pos);
 
             }
         }
@@ -375,50 +382,40 @@ public class AlpineGridManager : MonoBehaviour
             {
                 var agent = new Agent();
                 gridAgents[goatPos.x, goatPos.y] = agent;
-                agentsdict.Add(agent,true);
+                agentToPos.Add(agent, goatPos);
                 spawned++;
             }
         }
     }
 
-
+    List<Vector2Int> actor_locations = new List<Vector2Int>();
     // --------------------------------------------------
     //  SIMULATION STEP
     // --------------------------------------------------
     void StepSimulation()
     {
         // Collect current positions of all animals (wolves + goats).
-        var actor_locations = new List<Vector2Int>();
-        for (int x = 0; x < width; x++)
+        actor_locations.Clear();
+        var keys = agentToPos.Keys.ToArray();
+        foreach (var key in keys)
         {
-            for (int y = 0; y < height; y++)
+            var agent_pos = agentToPos[key];
+            var agent = key;
+
+            if (agent.narsBody.energy <= 0 || agent.narsBody.lifespan <= 0)
             {
-                var t = grid[x, y];
-                if (IsAgent(t))
-                {
-                    var agent_pos = new Vector2Int(x, y);
-           
-                    var agent = gridAgents[x, y];
-
-                    if(agent.narsBody.energy <= 0 || agent.narsBody.lifespan <= 0)
-                    {
-                        KillAgent(agent_pos);
-                    }
-                    else
-                    {
-                        actor_locations.Add(agent_pos);
-                        agent.narsBody.Sense(agent_pos, this);
-                        for(int i = 0; i < 3; i++)
-                        {
-                            agent.nars.do_working_cycle();
-                        }
-                        
-                    }
-
-             
-                }
+                KillAgent(agent_pos);
             }
-        }
+            else
+            {
+                actor_locations.Add(agent_pos);
+                agent.narsBody.Sense(agent_pos, this);
+
+                agent.nars.do_working_cycle();
+
+            }
+        }   
+ 
 
         // Shuffle so movement order is random each tick (reduces bias).
         FisherYatesShuffle(actor_locations);
@@ -499,7 +496,7 @@ public class AlpineGridManager : MonoBehaviour
         }
      
         ClearTileAt(agentPos);
-        agentsdict.Remove(agent);
+        agentToPos.Remove(agent);
     }
 
     public static Vector2Int GetMovementVectorFromDirection(Direction? dirtomove)
@@ -563,6 +560,8 @@ public class AlpineGridManager : MonoBehaviour
         grid[from.x, from.y] = TileType.Empty;
         gridAgents[to.x, to.y] = agent;
         gridAgents[from.x, from.y] =null;
+
+        agentToPos[agent] = to;
     }
 
     public bool IsBlocked(TileType type)

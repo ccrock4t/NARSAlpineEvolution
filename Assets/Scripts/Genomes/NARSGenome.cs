@@ -164,7 +164,7 @@ public class NARSGenome
     public const int num_of_personality_parameters = 2;
 
 
-    const int MAX_INITIAL_BELIEFS = 10;
+    const int MAX_INITIAL_BELIEFS = 20;
 
 
 
