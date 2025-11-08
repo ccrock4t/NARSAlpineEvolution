@@ -90,8 +90,8 @@ public class Memory
             Concept subject_concept = this.peek_concept(((StatementTerm)term).get_subject_term());
             Concept predicate_concept = this.peek_concept(((StatementTerm)term).get_predicate_term());
 
-            new_concept.set_term_links(subject_concept);
-            new_concept.set_term_links(predicate_concept);
+            if (subject_concept != null) new_concept.set_term_links(subject_concept);
+            if (predicate_concept != null) new_concept.set_term_links(predicate_concept);
 
             if (!((StatementTerm)term).is_first_order())
             {
@@ -309,12 +309,12 @@ public class Memory
         // Fallback: if all confidences are zero, select uniformly at random
         if (total <= 0.0)
         {
-            int idx = UnityEngine.Random.Range(0, count);
+            int idx = nars.random.Next(0, count);
             return candidates[idx];
         }
 
         // Sample: uniform in [0, total), then binary search the CDF
-        float r = UnityEngine.Random.value * total;
+        float r = (float)nars.random.NextDouble() * total;
         int k = Array.BinarySearch(cdf.ToArray(), r);
         if (k < 0) k = ~k; // first index where cdf[idx] >= r
 
@@ -648,6 +648,8 @@ public class Concept
         // add to superterm links
         item = subterm_concept.superterm_links.PUT_NEW(this);
         subterm_concept.superterm_links.change_priority(item.key, 0.5f);
+
+
     }
 
     public void remove_term_link(Concept concept)

@@ -156,24 +156,24 @@ public static class TermHelperFunctions
         }
         else if (Char.ToString(term_string[0]) == VariableTerm.VARIABLE_SYM || Char.ToString(term_string[0]) == VariableTerm.QUERY_SYM)
         {
+            var variable_name = term_string[1..];
             // variable term
-            int dependency_list_start_idx = term_string.IndexOf("(");
-            string variable_name;
-            string dependency_list_string;
-            if (dependency_list_start_idx == -1)
-            {
-                variable_name = term_string[1..];
-                dependency_list_string = "";
-            }
-            else
-            {
-                variable_name = term_string[1..dependency_list_start_idx];
-                dependency_list_string = term_string[(term_string.IndexOf("(") + 1)..term_string.IndexOf(")")];
-            }
+            //int dependency_list_start_idx = term_string.IndexOf("(");
+            //string variable_name;
+            //string dependency_list_string;
+            //if (dependency_list_start_idx == -1)
+            //{
+            //    variable_name = term_string[1..];
+            //    dependency_list_string = "";
+            //}
+            //else
+            //{
+            //    variable_name = term_string[1..dependency_list_start_idx];
+            //    dependency_list_string = term_string[(term_string.IndexOf("(") + 1)..term_string.IndexOf(")")];
+            //}
 
             term = VariableTerm.from_string(variable_name,
-                                            Char.ToString(term_string[0]),
-                                            dependency_list_string);
+                                            Char.ToString(term_string[0]));
         }
         else
         {
@@ -347,15 +347,13 @@ public class VariableTerm : Term
     public const string VARIABLE_SYM = "#";
     public const string QUERY_SYM = "?";
 
-    public Term?[] dependency_list;
     public string variable_name;
     public VariableType variable_type;
     public string variable_symbol;
 
 
     public VariableTerm(string variable_name,
-             VariableType variable_type,
-             Term?[] dependency_list = null) : base()
+             VariableType variable_type) : base()
     {
         /*
 
@@ -375,39 +373,38 @@ public class VariableTerm : Term
             this.variable_symbol = VariableTerm.VARIABLE_SYM;
         }
 
-        this.dependency_list = dependency_list;
         this._create_term_string();
     }
 
 
     public string _create_term_string()
     {
-        string dependency_string = "";
-        if (this.dependency_list != null)
-        {
-            dependency_string = "(";
-            foreach (Term dependency in this.dependency_list)
-            {
-                dependency_string = dependency_string + dependency.ToString() + SyntaxUtils.stringValueOf(StatementSyntax.TermDivider);
-            }
+        //string dependency_string = "";
+        //if (this.dependency_list != null)
+        //{
+        //    dependency_string = "(";
+        //    foreach (Term dependency in this.dependency_list)
+        //    {
+        //        dependency_string = dependency_string + dependency.ToString() + SyntaxUtils.stringValueOf(StatementSyntax.TermDivider);
+        //    }
 
 
-            dependency_string = dependency_string[0..^1] + ")";
-        }
-        this.term_string = this.variable_symbol + this.variable_name + dependency_string;
+        //    dependency_string = dependency_string[0..^1] + ")";
+        //}
+        this.term_string = this.variable_symbol + this.variable_name;// + dependency_string;
         return this.term_string;
     }
 
 
-    public static VariableTerm from_string(string variable_name, string variable_type_symbol, string dependency_list_string)
+    public static VariableTerm from_string(string variable_name, string variable_type_symbol)
     {
-        // parse dependency list
-        List<Term>? dependency_list = null;
+        //// parse dependency list
+        //List<Term>? dependency_list = null;
 
-        if (dependency_list_string.Length > 0)
-        {
-            dependency_list = new List<Term>();
-        }
+        //if (dependency_list_string.Length > 0)
+        //{
+        //    dependency_list = new List<Term>();
+        //}
 
 
         VariableTerm.VariableType? type = null;
@@ -417,34 +414,35 @@ public class VariableTerm : Term
         }
         else if (variable_type_symbol == VariableTerm.VARIABLE_SYM)
         {
-            if (dependency_list == null)
-            {
-                type = VariableTerm.VariableType.Independent;
-            }
-            else
-            {
-                type = VariableTerm.VariableType.Dependent;
-            }
+        //    if (dependency_list == null)
+        //    {
+        //        type = VariableTerm.VariableType.Independent;
+        //    }
+        //    else
+        //    {
+            type = VariableTerm.VariableType.Dependent;
+            //}
         }
         else
         {
             //Asserts.assert(false, "Error: Variable type symbol invalid");
         }
 
-        return new VariableTerm(variable_name, (VariableTerm.VariableType)type, dependency_list.ToArray());
+        return new VariableTerm(variable_name, (VariableTerm.VariableType)type);
     }
 
     public override int _calculate_syntactic_complexity()
     {
         if (this.syntactic_complexity != null) return (int)this.syntactic_complexity;
-        if (this.dependency_list == null)
-        {
-            return 1;
-        }
-        else
-        {
-            return 1 + this.dependency_list.Length;
-        }
+        //if (this.dependency_list == null)
+        //{
+        //    return 1;
+        //}
+        //else
+        //{
+        //    return 1 + this.dependency_list.Length;
+        //}
+        return 1;
     }
 
     public override bool is_first_order()
@@ -532,6 +530,8 @@ public class CompoundTerm : Term
 
         return false;
     }
+
+
     public override bool is_first_order()
     {
         return TermConnectorMethods.is_first_order((TermConnector)this.connector);

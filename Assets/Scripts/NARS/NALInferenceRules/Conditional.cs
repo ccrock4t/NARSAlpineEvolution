@@ -203,10 +203,6 @@ public class ConditionalRules
         {
             UnityEngine.Debug.LogError("Error: Invalid inputs to Simplify conjuctive goal (deduction)");
         }
-        //Asserts.assert(found_idx != -1, : "
-        //+ j1.ToString()
-        //+ " and "
-        //+ j2.ToString());
 
         remaining_subterms.RemoveAt(found_idx);
         Term result_statement;

@@ -13,7 +13,7 @@ public class NARSBody
     public int food_eaten = 0;
     public int movement = 0;
     public const int MAX_LIFE = 100;
-    public int lifespan = MAX_LIFE;
+    public int remaining_life = MAX_LIFE;
     public NARSBody(NARS nars)
     {
         this.nars = nars;
@@ -34,13 +34,8 @@ public class NARSBody
         }
         timesteps_alive++;
         energy--;
-        lifespan--;
-        // enter instinctual goals
-        foreach (var goal_data in nars.genome.goals)
-        {
-            var goal = new Goal(nars, goal_data.statement, goal_data.evidence, occurrence_time: nars.current_cycle_number);
-            nars.SendInput(goal);
-        }
+        remaining_life--;
+
     }
 
     public StatementTerm GetSensorTermForTileTypeAndDirection(TileType type, Direction direction)
@@ -68,7 +63,7 @@ public class NARSBody
     {
         if(food_eaten > 0)
         {
-            return food_eaten;
+            return MAX_LIFE - remaining_life;
         }
         else
         {

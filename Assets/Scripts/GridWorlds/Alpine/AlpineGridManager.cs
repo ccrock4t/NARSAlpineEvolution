@@ -24,15 +24,73 @@ public class AlpineGridManager : MonoBehaviour
 
     public enum Direction
     {
-        N,
-        NE,
-        E,
-        SE,
-        S,
-        SW,
-        W,
-        NW
+        n2x_n2y,
+        n1x_n2y,
+        p0x_n2y,
+        p1x_n2y,
+        p2x_n2y,
+
+        n2x_n1y,
+        n1x_n1y,
+        p0x_n1y,
+        p1x_n1y,
+        p2x_n1y,
+
+        n2x_p0y,
+        n1x_p0y,
+        p0x_p0y,
+        p1x_p0y,
+        p2x_p0y,
+
+        n2x_p1y,
+        n1x_p1y,
+        p0x_p1y,
+        p1x_p1y,
+        p2x_p1y,
+
+        n2x_p2y,
+        n1x_p2y,
+        p0x_p2y,
+        p1x_p2y,
+        p2x_p2y,
+
+
     }
+
+    // Directions: up, down, left, right
+    private static readonly Vector2Int[] CardinalDirs =
+    {
+        2*Vector2Int.left + 2*Vector2Int.down,  // n2x_n2y
+        1*Vector2Int.left + 2*Vector2Int.down,  // n1x_n2y
+        0*Vector2Int.left + 2*Vector2Int.down,  // p0x_n2y
+        1*Vector2Int.right + 2*Vector2Int.down, // p1x_n2y
+        2*Vector2Int.right + 2*Vector2Int.down, // p2x_n2y
+
+        2*Vector2Int.left + 1*Vector2Int.down,  // n2x_n1y
+        1*Vector2Int.left + 1*Vector2Int.down,  // n1x_n1y
+        0*Vector2Int.left + 1*Vector2Int.down,  // p0x_n1y
+        1*Vector2Int.right + 1*Vector2Int.down, // p1x_n1y
+        2*Vector2Int.right + 1*Vector2Int.down, // p2x_n1y
+
+        2*Vector2Int.left + 0*Vector2Int.down,  // n2x_p0y
+        1*Vector2Int.left + 0*Vector2Int.down,  // n1x_p0y
+        0*Vector2Int.left + 0*Vector2Int.down,  // p0x_p0y (center)
+        1*Vector2Int.right + 0*Vector2Int.down, // p1x_p0y
+        2*Vector2Int.right + 0*Vector2Int.down, // p2x_p0y
+
+        2*Vector2Int.left + 1*Vector2Int.up,    // n2x_p1y
+        1*Vector2Int.left + 1*Vector2Int.up,    // n1x_p1y
+        0*Vector2Int.left + 1*Vector2Int.up,    // p0x_p1y
+        1*Vector2Int.right + 1*Vector2Int.up,   // p1x_p1y
+        2*Vector2Int.right + 1*Vector2Int.up,   // p2x_p1y
+
+        2*Vector2Int.left + 2*Vector2Int.up,    // n2x_p2y
+        1*Vector2Int.left + 2*Vector2Int.up,    // n1x_p2y
+        0*Vector2Int.left + 2*Vector2Int.up,    // p0x_p2y
+        1*Vector2Int.right + 2*Vector2Int.up,   // p1x_p2y
+        2*Vector2Int.right + 2*Vector2Int.up,   // p2x_p2y
+
+    };
 
     public class Agent
     {
@@ -85,21 +143,10 @@ public class AlpineGridManager : MonoBehaviour
     // --- Tick settings ---
     public const int ENERGY_IN_FOOD = 10;
 
-    // Directions: up, down, left, right
-    private static readonly Vector2Int[] CardinalDirs =
-    { 
-        Vector2Int.up,
-        Vector2Int.up + Vector2Int.right, 
-        Vector2Int.right,
-        Vector2Int.down + Vector2Int.right,
-        Vector2Int.down, 
-        Vector2Int.down + Vector2Int.left,
-        Vector2Int.left,
-        Vector2Int.up + Vector2Int.left,
-    };
+
 
     public const int NUM_OF_NARS_AGENTS = 50;
-    public const int NUM_OF_GRASS = 100;
+    public const int NUM_OF_GRASS = 200;
     AnimatTable table;
 
     public TMP_Text timestepTXT;
@@ -402,16 +449,26 @@ public class AlpineGridManager : MonoBehaviour
             var agent_pos = agentToPos[key];
             var agent = key;
 
-            if (agent.narsBody.energy <= 0 || agent.narsBody.lifespan <= 0)
+            if (agent.narsBody.energy <= 0 || agent.narsBody.remaining_life <= 0)
             {
                 KillAgent(agent_pos);
             }
             else
             {
                 actor_locations.Add(agent_pos);
-                agent.narsBody.Sense(agent_pos, this);
+                for (int i =0; i<10; i++)
+                {
+                    agent.narsBody.Sense(agent_pos, this);
+                    // enter instinctual goals
+                    foreach (var goal_data in agent.nars.genome.goals)
+                    {
+                        var goal = new Goal(agent.nars, goal_data.statement, goal_data.evidence, occurrence_time: agent.nars.current_cycle_number);
+                        agent.nars.SendInput(goal);
+                    }
+                    agent.nars.do_working_cycle();
+                }
 
-                agent.nars.do_working_cycle();
+
 
             }
         }   
@@ -448,7 +505,7 @@ public class AlpineGridManager : MonoBehaviour
             }
             if (dirtoeat != null)
             {
-                var eatLocation = fromLocation + GetMovementVectorFromDirection(dirtoeat);
+                var eatLocation = fromLocation + GetMovementVectorFromDirection((Direction)dirtoeat);
                 TryEatEntity(agent, eatLocation);
             }
 
@@ -471,7 +528,7 @@ public class AlpineGridManager : MonoBehaviour
 
             if (dirtomove != null)
             {
-                var toLocation = fromLocation + GetMovementVectorFromDirection(dirtomove);
+                var toLocation = fromLocation + GetMovementVectorFromDirection((Direction)dirtomove);
                 MoveEntity(fromLocation, toLocation, agent);
             }
     
@@ -499,20 +556,9 @@ public class AlpineGridManager : MonoBehaviour
         agentToPos.Remove(agent);
     }
 
-    public static Vector2Int GetMovementVectorFromDirection(Direction? dirtomove)
+    public static Vector2Int GetMovementVectorFromDirection(Direction dirtomove)
     {
-        return dirtomove switch
-        {
-            Direction.N => new(0, 1),
-            Direction.NE => new(1, 1),
-            Direction.E => new(1, 0),
-            Direction.SE => new(1, -1),
-            Direction.S => new(0, -1),
-            Direction.SW => new(-1, -1),
-            Direction.W => new(-1, 0),
-            Direction.NW => new(-1, 1),
-            _ => new(0, 0)
-        };
+        return CardinalDirs[(int)dirtomove];
     }
 
 
@@ -630,4 +676,13 @@ public class AlpineGridManager : MonoBehaviour
         }
         return results;
     }
+
+    public static string GetRandomDirectionString()
+    {
+        Array values = Enum.GetValues(typeof(Direction));
+        int index = Random.Range(0, values.Length);  // using UnityEngine.Random
+        Direction randomDir = (Direction)values.GetValue(index);
+        return randomDir.ToString();
+    }
+
 }
