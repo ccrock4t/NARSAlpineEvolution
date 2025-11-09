@@ -21,21 +21,20 @@ public class Bag<T> : ItemContainer<T>
     */
     int level;
     int granularity;
-    Dictionary<int, List<Item<T>>> priority_buckets;
-   // Dictionary<int, List<Item<T>>> quality_buckets;
+    List<Item<T>>[] priority_buckets;
+    // Dictionary<int, List<Item<T>>> quality_buckets;
     System.Random random;
     public Bag(int capacity, int granularity) : base(capacity)
     {
         this.level = 0;
-        this.priority_buckets = new Dictionary<int, List<Item<T>>>();
         //this.quality_buckets = new Dictionary<int, List<Item<T>>>(); // store by inverted quality for deletion
         this.granularity = granularity;
 
+        // Allocate the array once; no hashing, no per-insert rehashing.
+        this.priority_buckets = new List<Item<T>>[granularity];
         for (int i = 0; i < granularity; i++)
-        {
-            this.priority_buckets[i] = new List<Item<T>>();
-            //this.quality_buckets[i] = new List<Item<T>>();
-        }
+            this.priority_buckets[i] = new List<Item<T>>(4); // small initial capacityty_buckets[i] = new List<Item<T>>();
+    
         random = new System.Random();
     }
 
@@ -43,10 +42,8 @@ public class Bag<T> : ItemContainer<T>
     {
         this.level = 0;
         for (int i = 0; i < granularity; i++)
-        {
             this.priority_buckets[i].Clear();
-            //this.quality_buckets[i].Clear();
-        }
+
         base.Clear();
     }
 
@@ -86,7 +83,7 @@ public class Bag<T> : ItemContainer<T>
         Item<T>? item = null;
         if (key == null)
         {
-            item = this._peek_probabilistically(this.priority_buckets);
+            item = this._peek_probabilistically();
         }
         else
         {
@@ -140,10 +137,9 @@ public class Bag<T> : ItemContainer<T>
 
     public void add_item_to_bucket(Item<T> item)
     {
-        // add to appropriate bucket
-        int bucket_num = this.calc_bucket_num_from_value(item.budget.get_priority());
-        List<Item<T>> bucket = this.priority_buckets[bucket_num];
-        bucket.Add(item); // convert to ID so
+        int bucket_num = calc_bucket_num_from_value(item.budget.get_priority());
+        var bucket = this.priority_buckets[bucket_num];
+        bucket.Add(item);
         item.bucket_num = bucket_num;
     }
 
@@ -151,7 +147,7 @@ public class Bag<T> : ItemContainer<T>
     public void remove_item_from_its_bucket(Item<T> item)
     {
         // take from bucket
-        List<Item<T>> bucket = this.priority_buckets[(int)item.bucket_num];
+        var bucket = this.priority_buckets[(int)item.bucket_num];
         bucket.Remove(item);
         item.bucket_num = null;
     }
@@ -238,7 +234,7 @@ public class Bag<T> : ItemContainer<T>
         Item<T> item;
         try
         {
-            item = this._peek_probabilistically(this.priority_buckets);
+            item = this._peek_probabilistically();
             //Asserts.assert(this.item_lookup_dict.ContainsKey(item.key), "Given key does not exist in this bag");
             item = _take_from_lookup_dict(item.key);
             this.remove_item_from_its_bucket(item);
@@ -251,9 +247,8 @@ public class Bag<T> : ItemContainer<T>
         return item;
     }
 
-    System.Random rng = new System.Random();
+
     public Item<T>? _peek_probabilistically(
-        Dictionary<int, List<Item<T>>> buckets,
         bool weightByItemCount = false)
     {
         // 1) Build weights
@@ -263,7 +258,8 @@ public class Bag<T> : ItemContainer<T>
 
         for (int level = 0; level < granularity; level++)
         {
-            if (!buckets.TryGetValue(level, out var list) || list == null || list.Count == 0)
+            var list = priority_buckets[level];
+            if (list == null || list.Count == 0)
             {
                 weights[level] = 0;
                 continue;
@@ -278,7 +274,7 @@ public class Bag<T> : ItemContainer<T>
         if (total <= 0) return null; // all empty
 
         // 2) Sample a bucket via CDF
-        double r = rng.NextDouble() * total;
+        double r = random.NextDouble() * total;
         int pickedLevel = 0;
         double cumulative = 0;
         for (; pickedLevel < granularity; pickedLevel++)
@@ -287,9 +283,9 @@ public class Bag<T> : ItemContainer<T>
             if (r < cumulative) break;
         }
 
-        var bucket = buckets[pickedLevel];
+        var bucket = priority_buckets[pickedLevel];
         // 3) Pick an item uniformly within that bucket
-        int idx = rng.Next(0, bucket.Count);
+        int idx = random.Next(0, bucket.Count);
         return bucket[idx];
     }
 

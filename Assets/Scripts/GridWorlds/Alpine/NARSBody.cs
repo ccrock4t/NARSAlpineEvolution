@@ -9,7 +9,7 @@ public class NARSBody
 {
     static IEnumerable<Direction> _directions;
     public NARS nars;
-    int timesteps_alive = 0;
+    public int timesteps_alive = 0;
     public int energy = ENERGY_IN_FOOD;
     public int food_eaten = 0;
     public int movement = 0;
@@ -33,9 +33,7 @@ public class NARSBody
             var sensation = new Judgment(this.nars, sensor_term, new(1.0f, 0.99f));
             nars.SendInput(sensation);
         }
-        timesteps_alive++;
-        energy--;
-        remaining_life--;
+
 
     }
 

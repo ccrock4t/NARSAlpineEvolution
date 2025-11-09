@@ -7,11 +7,14 @@
 /*
 Helper Functions
 */
+using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using UnityEditor.Experimental.GraphView;
 
 public static class TermHelperFunctions
@@ -61,10 +64,10 @@ public static class TermHelperFunctions
             }
 
             // decide if we need to maintain the ordering
-            if (TermConnectorMethods.is_order_invariant((TermConnector)term_connector))
+            if (TermConnectorMethods.is_order_invariant((TermConnector)term_connector) && subterms.Length > 1)
             {
-                // order doesn't matter, alphabetize so the system can recognize the same term
-                Array.Sort(sub_terms, (x, y) => x.ToString().CompareTo(y.ToString()));
+                Array.Sort(sub_terms, (x, y) =>
+                    string.Compare(x.get_term_string(), y.get_term_string(), StringComparison.Ordinal));
             }
 
             // check if it's a set
@@ -251,6 +254,8 @@ public abstract class Term
     public string term_string;
     public int? syntactic_complexity;
     public TermConnector? connector = null;
+    bool hash_computed = false;
+    int _hash = 0;
 
     public Term()
     {
@@ -265,7 +270,7 @@ public abstract class Term
         /*
             Terms are equal if their strings are the same
         */
-        return other is Term && this.ToString() == other.ToString();
+        return other is Term && this.term_string == ((Term)other).term_string;
     }
 
     public static bool operator ==(Term obj1, Term obj2)
@@ -275,7 +280,7 @@ public abstract class Term
         */
         if (object.ReferenceEquals(obj1, obj2)) return true;
         if (object.ReferenceEquals(obj1, null) || object.ReferenceEquals(obj2, null)) return false;
-        return obj1.ToString() == obj2.ToString();
+        return obj1.term_string == obj2.term_string;
     }
 
     public static bool operator !=(Term obj1, Term obj2)
@@ -288,7 +293,12 @@ public abstract class Term
 
     public override int GetHashCode()
     {
-        return this.ToString().GetHashCode();
+        if (!hash_computed)
+        {
+            hash_computed = true;
+            _hash = this.term_string.GetHashCode();
+        }
+        return _hash;
     }
 
     public override string ToString()
@@ -589,40 +599,72 @@ public class CompoundTerm : Term
     }
 
 
-    public static string _create_term_string(bool is_set,
+
+    public static string _create_term_string(
+        bool is_set,
         TermConnector connector,
         Term[] subterms)
     {
-        string str;
-        if (is_set)
-        {
-            str = SyntaxUtils.stringValueOf(connector);
-        }
-        else
-        {
-            str = SyntaxUtils.stringValueOf(connector) + SyntaxUtils.stringValueOf(StatementSyntax.TermDivider);
-        }
+        // Fetch static pieces once
+        var divider = SyntaxUtils.stringValueOf(StatementSyntax.TermDivider);
+        var startStr = SyntaxUtils.stringValueOf(StatementSyntax.Start);
+        var endStr = SyntaxUtils.stringValueOf(StatementSyntax.End);
+        var connStart = SyntaxUtils.stringValueOf(connector);
+        var connEndStr = is_set
+            ? SyntaxUtils.stringValueOf(
+                TermConnectorMethods.get_set_end_connector_from_set_start_connector(connector))
+            : null;
 
+        // Pull all term strings once (avoid repeated virtual calls) and
+        // compute total length to pre-size the builder.
+        int termsLen = 0;
+        var termStrings = new string[subterms.Length];
         for (int i = 0; i < subterms.Length; i++)
         {
-            Term subterm = subterms[i];
-            var term_string = subterm.get_term_string();
-            str += term_string + SyntaxUtils.stringValueOf(StatementSyntax.TermDivider);
+            var s = subterms[i].get_term_string();
+            termStrings[i] = s;
+            termsLen += s.Length;
         }
 
-        str = str[0..^1];  // remove the final term divider
+        // Compute required capacity:
+        //   prefix + joined terms (with dividers between, not after) + suffix
+        int prefixLen = is_set ? connStart.Length : (startStr.Length + connStart.Length + divider.Length);
+        int betweenLen = (subterms.Length > 0 ? (subterms.Length - 1) * divider.Length : 0);
+        int suffixLen = is_set ? connEndStr.Length : endStr.Length;
+        int capacity = prefixLen + termsLen + betweenLen + suffixLen;
 
+        var sb = new StringBuilder(capacity);
+
+        // Prefix
         if (is_set)
         {
-            str += SyntaxUtils.stringValueOf(TermConnectorMethods.get_set_end_connector_from_set_start_connector((TermConnector)connector));
+            sb.Append(connStart);
         }
         else
         {
-            str = SyntaxUtils.stringValueOf(StatementSyntax.Start) + str + SyntaxUtils.stringValueOf(StatementSyntax.End);
+            sb.Append(startStr).Append(connStart).Append(divider);
         }
 
-        return str;
+        // Terms with divider BETWEEN, not after
+        for (int i = 0; i < termStrings.Length; i++)
+        {
+            if (i > 0) sb.Append(divider);
+            sb.Append(termStrings[i]);
+        }
+
+        // Suffix
+        if (is_set)
+        {
+            sb.Append(connEndStr);
+        }
+        else
+        {
+            sb.Append(endStr);
+        }
+
+        return sb.ToString();
     }
+
 
 
 
@@ -880,34 +922,6 @@ public class StatementTerm : Term
         return this.string_with_interval;
     }
 
-    public string _create_term_string_with_interval()
-    {
-        /*
-            Returns the term's string with interval_list.
-
-            returns: (Subject copula Predicate)
-        */
-        string str;
-        if (this.get_subject_term() is CompoundTerm && (((CompoundTerm)this.get_subject_term()).connector == TermConnector.SequentialConjunction))
-        {
-            str = SyntaxUtils.stringValueOf(StatementSyntax.Start) + ((CompoundTerm)this.get_subject_term()).get_term_string_with_interval();
-        }
-        else
-        {
-            str = SyntaxUtils.stringValueOf(StatementSyntax.Start) + this.get_subject_term().get_term_string();
-        }
-
-        if (!this.is_first_order() && this.interval > 0)
-        {
-            str = str[0..^1] + SyntaxUtils.stringValueOf(StatementSyntax.TermDivider) + this.interval.ToString() + str[0..^1];
-        }
-
-        str += " " + this.get_copula_string() + " ";
-        str += this.get_predicate_term().get_term_string() + SyntaxUtils.stringValueOf(StatementSyntax.End);
-
-        return str;
-    }
-
     public string _create_term_string()
     {
         /*
@@ -917,13 +931,28 @@ public class StatementTerm : Term
 
             returns: (Subject copula Predicate)
         */
-        string str = SyntaxUtils.stringValueOf(StatementSyntax.Start) + this.get_subject_term().get_term_string();
+        // Pull pieces once (avoid repeated virtual calls).
+        var start = SyntaxUtils.stringValueOf(StatementSyntax.Start);  // e.g. "("
+        var end = SyntaxUtils.stringValueOf(StatementSyntax.End);    // e.g. ")"
+        var subject = this.get_subject_term().get_term_string();
+        var copula = this.get_copula_string();
+        var predicate = this.get_predicate_term().get_term_string();
 
-        str += " " + this.get_copula_string() + " ";
-        str += this.get_predicate_term().get_term_string() + SyntaxUtils.stringValueOf(StatementSyntax.End);
+        // Precompute exact length: start + subject + " " + copula + " " + predicate + end
+        int capacity = start.Length + subject.Length + 1 + copula.Length + 1 + predicate.Length + end.Length;
 
-        this.term_string = str;
-        return this.term_string;
+        var sb = new StringBuilder(capacity);
+        sb.Append(start)
+          .Append(subject)
+          .Append(' ')
+          .Append(copula)
+          .Append(' ')
+          .Append(predicate)
+          .Append(end);
+
+        var built = sb.ToString();
+        return built;
+    
     }
 
     public override bool contains_op()

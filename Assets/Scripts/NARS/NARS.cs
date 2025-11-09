@@ -170,72 +170,72 @@ public class NARS
 
     public void Consider(Concept? concept = null)
     {
-        /*
-            Process a belief from a random concept in memory.
+        ///*
+        //    Process a belief from a random concept in memory.
 
-            This function can result in new tasks
+        //    This function can result in new tasks
 
-            :param: concept: concept to consider. If null, picks a random concept
-        */
-        Item<Concept>? concept_item = null;
-        if (concept == null)
-        {
-            concept_item = this.memory.get_random_concept_item();
-            if (concept_item == null) return; // nothing to ponder
-            concept = concept_item.obj;
-        }
-
-
-        // If concept is not named by a statement, get a related concept that is a statement
-        int attempts = 0;
-        int max_attempts = 2;
-        while (attempts < max_attempts && !(((concept.term is StatementTerm) || ((concept.term is CompoundTerm) && !((CompoundTerm)concept.term).is_first_order()))))
-        {
-            if (concept.term_links.GetCount() > 0)
-            {
-                concept = concept.term_links.peek().obj;
-            }
-            else
-            {
-                break;
-            }
-
-            attempts += 1;
-        }
-
-        // debugs
-        if (this.config.DEBUG)
-        {
-            string str = "Considering concept: " + concept.term.ToString();
-            if (concept_item != null) str += concept_item.budget.ToString();
-            if (concept.belief_table.GetCount() > 0) str += " expectation: " + this.inferenceEngine.get_expectation(concept.belief_table.peek()).ToString();
-            if (concept.desire_table.GetCount() > 0) str += " desirability: " + concept.desire_table.peek().get_desirability(this);
-            Debug.Log(str);
-        }
-
-        //Debug.Log("CONSIDER: " + str(concept))
-
-        if (concept != null && attempts != max_attempts)
-        {
-            // process a belief && desire
-            if (concept.belief_table.GetCount() > 0)
-            {
-                this.process_judgment_continued(concept.belief_table.peek());  // process most confident belief
-            }
+        //    :param: concept: concept to consider. If null, picks a random concept
+        //*/
+        //Item<Concept>? concept_item = null;
+        //if (concept == null)
+        //{
+        //    concept_item = this.memory.get_random_concept_item();
+        //    if (concept_item == null) return; // nothing to ponder
+        //    concept = concept_item.obj;
+        //}
 
 
-            if (concept.desire_table.GetCount() > 0)
-            {
-                this.process_goal_continued(concept.desire_table.peek()); // process most confident goal
-            }
+        //// If concept is not named by a statement, get a related concept that is a statement
+        //int attempts = 0;
+        //int max_attempts = 2;
+        //while (attempts < max_attempts && !(((concept.term is StatementTerm) || ((concept.term is CompoundTerm) && !((CompoundTerm)concept.term).is_first_order()))))
+        //{
+        //    if (concept.term_links.GetCount() > 0)
+        //    {
+        //        concept = concept.term_links.peek().obj;
+        //    }
+        //    else
+        //    {
+        //        break;
+        //    }
+
+        //    attempts += 1;
+        //}
+
+        //// debugs
+        //if (this.config.DEBUG)
+        //{
+        //    string str = "Considering concept: " + concept.term.ToString();
+        //    if (concept_item != null) str += concept_item.budget.ToString();
+        //    if (concept.belief_table.GetCount() > 0) str += " expectation: " + this.inferenceEngine.get_expectation(concept.belief_table.peek()).ToString();
+        //    if (concept.desire_table.GetCount() > 0) str += " desirability: " + concept.desire_table.peek().get_desirability(this);
+        //    Debug.Log(str);
+        //}
+
+        ////Debug.Log("CONSIDER: " + str(concept))
+
+        //if (concept != null && attempts != max_attempts)
+        //{
+        //    // process a belief && desire
+        //    if (concept.belief_table.GetCount() > 0)
+        //    {
+        //        this.process_judgment_continued(concept.belief_table.peek());  // process most confident belief
+        //    }
 
 
-            // decay priority;
-            if (concept_item != null)
-            {
-                this.memory.concepts_bag.decay_item(concept_item.key, this.config.PRIORITY_DECAY_VALUE);
-            }
-        }
+        //    if (concept.desire_table.GetCount() > 0)
+        //    {
+        //        this.process_goal_continued(concept.desire_table.peek()); // process most confident goal
+        //    }
+
+
+        //    // decay priority;
+        //    if (concept_item != null)
+        //    {
+        //        this.memory.concepts_bag.decay_item(concept_item.key, this.config.PRIORITY_DECAY_VALUE);
+        //    }
+        //}
     }
 
 
@@ -333,11 +333,11 @@ public class NARS
         Term statement_term = j1.statement;
 
         // do regular semantic inference;
-        List<Sentence> results = this.process_sentence_semantic_inference(j1);
-        foreach (Sentence result in results)
-        {
-            this.global_buffer.PUT_NEW(result);
-        }
+        //List<Sentence> results = this.process_sentence_semantic_inference(j1);
+        //foreach (Sentence result in results)
+        //{
+        //    this.global_buffer.PUT_NEW(result);
+        //}
     }
 
 
@@ -754,10 +754,10 @@ public class NARS
 
             if (statement_term is CompoundTerm)
             {
-                if (statement_concept.prediction_links.GetCount() > 0)
-                {
-                    related_concept = statement_concept.prediction_links.peek().obj;
-                }
+                //if (statement_concept.prediction_links.GetCount() > 0)
+                //{
+                //    related_concept = statement_concept.prediction_links.peek().obj;
+                //}
             }
             else if (statement_term is StatementTerm && !((StatementTerm)statement_term).is_first_order())
             {
@@ -771,10 +771,10 @@ public class NARS
                 {
                     related_concept = statement_concept.explanation_links.peek().obj;
                 }
-                else if (statement_concept.superterm_links.GetCount() > 0)
-                {
-                    related_concept = statement_concept.superterm_links.peek().obj;
-                }
+                //else if (statement_concept.superterm_links.GetCount() > 0)
+                //{
+                //    related_concept = statement_concept.superterm_links.peek().obj;
+                //}
             }
             else
             {

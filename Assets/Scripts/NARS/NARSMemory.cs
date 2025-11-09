@@ -157,91 +157,91 @@ public class Memory
 
         :return Statement-Term Concept semantically related to param: `statement_concept`
     */
+        return null;
+        //int count = 0;
+        //Concept? related_concept = null;
+        //if (statement_concept.term_links.GetCount() == 0) return null;
 
-        int count = 0;
-        Concept? related_concept = null;
-        if (statement_concept.term_links.GetCount() == 0) return null;
+        //StatementTerm concept_term = (StatementTerm)statement_concept.term;
 
-        StatementTerm concept_term = (StatementTerm)statement_concept.term;
+        //while (count < this.nars.config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT && related_concept == null)
+        //{
+        //    count += 1;
+        //    Concept shared_term_concept = statement_concept.term_links.peek().obj;
+        //    if (concept_term.is_first_order())
+        //    {
+        //        // S --> P
+        //        if (statement_concept.term_links.GetCount() != 0)
+        //            shared_term_concept = statement_concept.term_links.peek().obj;
+        //        if (shared_term_concept.term is AtomicTerm)
+        //        {
+        //            // atomic term concept (S)
+        //            related_concept = shared_term_concept.term_links.peek().obj; // peek additional term links to get another statement term
+        //        }
+        //        else if (shared_term_concept.term is CompoundTerm)
+        //        {
+        //            if (((CompoundTerm)shared_term_concept.term).is_first_order())
+        //            {
+        //                // the subject || predicate == a first-order compound
+        //                related_concept = shared_term_concept.term_links.peek().obj; // peek additional term links to get a statement term
+        //                if (!(related_concept.term is StatementTerm))
+        //                {
+        //                    related_concept = null;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                // this statement == in a higher-order compound, we can use it in inference
+        //                related_concept = shared_term_concept;
+        //            }
+        //        }
+        //        else if (shared_term_concept.term is StatementTerm)
+        //        {
+        //            // implication statement (S-->P) ==> B
+        //            related_concept = shared_term_concept;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        // Higher order
+        //        // S ==> P
+        //        // term linked concept == A-->B
+        //        Bag<Concept> bag;
+        //        if (shared_term_concept.prediction_links.GetCount() == 0 && shared_term_concept.explanation_links.GetCount() == 0)
+        //        {
+        //            continue;
+        //        }
+        //        else if (shared_term_concept.prediction_links.GetCount() != 0 && shared_term_concept.explanation_links.GetCount() == 0)
+        //        {
+        //            bag = shared_term_concept.prediction_links;
+        //        }
+        //        else if (shared_term_concept.explanation_links.GetCount() != 0 && shared_term_concept.prediction_links.GetCount() == 0)
+        //        {
+        //            bag = shared_term_concept.explanation_links;
+        //        }
+        //        else
+        //        {
+        //            int rand_int = UnityEngine.Random.Range(0, 2);
+        //            switch (rand_int)
+        //            {
+        //                case 0:
+        //                    bag = shared_term_concept.prediction_links;
+        //                    break;
+        //                case 1:
+        //                    bag = shared_term_concept.explanation_links;
+        //                    break;
+        //                default:
+        //                    //Asserts.assert(false, "ERROR:");
+        //                    continue;
+        //                    break;
+        //            }
 
-        while (count < this.nars.config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT && related_concept == null)
-        {
-            count += 1;
-            Concept shared_term_concept = statement_concept.term_links.peek().obj;
-            if (concept_term.is_first_order())
-            {
-                // S --> P
-                if (statement_concept.term_links.GetCount() != 0)
-                    shared_term_concept = statement_concept.term_links.peek().obj;
-                if (shared_term_concept.term is AtomicTerm)
-                {
-                    // atomic term concept (S)
-                    related_concept = shared_term_concept.term_links.peek().obj; // peek additional term links to get another statement term
-                }
-                else if (shared_term_concept.term is CompoundTerm)
-                {
-                    if (((CompoundTerm)shared_term_concept.term).is_first_order())
-                    {
-                        // the subject || predicate == a first-order compound
-                        related_concept = shared_term_concept.term_links.peek().obj; // peek additional term links to get a statement term
-                        if (!(related_concept.term is StatementTerm))
-                        {
-                            related_concept = null;
-                        }
-                    }
-                    else
-                    {
-                        // this statement == in a higher-order compound, we can use it in inference
-                        related_concept = shared_term_concept;
-                    }
-                }
-                else if (shared_term_concept.term is StatementTerm)
-                {
-                    // implication statement (S-->P) ==> B
-                    related_concept = shared_term_concept;
-                }
-            }
-            else
-            {
-                // Higher order
-                // S ==> P
-                // term linked concept == A-->B
-                Bag<Concept> bag;
-                if (shared_term_concept.prediction_links.GetCount() == 0 && shared_term_concept.explanation_links.GetCount() == 0)
-                {
-                    continue;
-                }
-                else if (shared_term_concept.prediction_links.GetCount() != 0 && shared_term_concept.explanation_links.GetCount() == 0)
-                {
-                    bag = shared_term_concept.prediction_links;
-                }
-                else if (shared_term_concept.explanation_links.GetCount() != 0 && shared_term_concept.prediction_links.GetCount() == 0)
-                {
-                    bag = shared_term_concept.explanation_links;
-                }
-                else
-                {
-                    int rand_int = UnityEngine.Random.Range(0, 2);
-                    switch (rand_int)
-                    {
-                        case 0:
-                            bag = shared_term_concept.prediction_links;
-                            break;
-                        case 1:
-                            bag = shared_term_concept.explanation_links;
-                            break;
-                        default:
-                            //Asserts.assert(false, "ERROR:");
-                            continue;
-                            break;
-                    }
+        //            related_concept = bag.peek().obj;
+        //        }
+        //    }
+        //}
 
-                    related_concept = bag.peek().obj;
-                }
-            }
-        }
-
-        return related_concept;
+        //return related_concept;
     }
 
     public Judgment get_best_explanation(Sentence j)
@@ -560,12 +560,12 @@ public class Concept
         NARS Concept
     */
     public Term term;  // concept's unique term
-    public Bag<Concept> term_links;  // Bag of related concepts (related by term)
-    public Bag<Concept> subterm_links;  // Bag of related concepts (related by term)
-    public Bag<Concept> superterm_links;  // Bag of related concepts (related by term)
+//    public Bag<Concept> term_links;  // Bag of related concepts (related by term)
+ //   public Bag<Concept> subterm_links;  // Bag of related concepts (related by term)
+  //  public Bag<Concept> superterm_links;  // Bag of related concepts (related by term)
     public Table<Judgment> belief_table;
     public Table<Goal> desire_table;
-    public Bag<Concept> prediction_links;
+ //   public Bag<Concept> prediction_links;
     public Bag<Concept> explanation_links;
 
 
@@ -577,12 +577,12 @@ public class Concept
 
         this.term = term;  // concept's unique term
         int granularity = nars.config.BAG_GRANULARITY;
-        this.term_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
-        this.subterm_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
-        this.superterm_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
+      //  this.term_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
+       // this.subterm_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
+       // this.superterm_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);  // Bag of related concepts (related by term)
         this.belief_table = new Table<Judgment>(this.nars.config.TABLE_DEFAULT_CAPACITY, nars);
         this.desire_table = new Table<Goal>(this.nars.config.TABLE_DEFAULT_CAPACITY, nars);
-        this.prediction_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);
+       // this.prediction_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);
         this.explanation_links = new Bag<Concept>(this.nars.config.CONCEPT_LINK_CAPACITY, granularity);
     }
 
@@ -633,22 +633,22 @@ public class Concept
 
         :param subterm concept to this superterm concept (this)
         */
-        if (this.term_links.Contains(subterm_concept)) return;  // already linked
+       // if (this.term_links.Contains(subterm_concept)) return;  // already linked
 
         // add to term links
-        Item<Concept> item = this.term_links.PUT_NEW(subterm_concept);
-        this.term_links.change_priority(item.key, 0.5f);
+       // Item<Concept> item = this.term_links.PUT_NEW(subterm_concept);
+       // this.term_links.change_priority(item.key, 0.5f);
 
-        item = subterm_concept.term_links.PUT_NEW(this);
-        subterm_concept.term_links.change_priority(item.key, 0.5f);
+      //  item = subterm_concept.term_links.PUT_NEW(this);
+      //  subterm_concept.term_links.change_priority(item.key, 0.5f);
 
         // add to subterm links
-        item = this.subterm_links.PUT_NEW(subterm_concept);
-        this.subterm_links.change_priority(item.key, 0.5f);
+        //item = this.subterm_links.PUT_NEW(subterm_concept);
+        //this.subterm_links.change_priority(item.key, 0.5f);
 
         // add to superterm links
-        item = subterm_concept.superterm_links.PUT_NEW(this);
-        subterm_concept.superterm_links.change_priority(item.key, 0.5f);
+        //item = subterm_concept.superterm_links.PUT_NEW(this);
+        //subterm_concept.superterm_links.change_priority(item.key, 0.5f);
 
 
     }
@@ -661,8 +661,8 @@ public class Concept
         */
         //Asserts.assert_concept(concept);
         //Asserts.assert(this.term_links.Contains(concept), concept + "must be in term links.");
-        this.term_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(concept));
-        concept.term_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(this));
+     //   this.term_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(concept));
+     //   concept.term_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(this));
     }
 
     public void set_prediction_link(Concept concept)
@@ -673,9 +673,9 @@ public class Concept
         */
         if (concept == null) return;
         //Asserts.assert_concept(concept);
-        if (this.prediction_links.Contains(concept)) return;  // already linked
-        Item<Concept> concept_item = this.prediction_links.PUT_NEW(concept);
-        this.prediction_links.change_priority(concept_item.key, 0.99f);
+     //   if (this.prediction_links.Contains(concept)) return;  // already linked
+     //   Item<Concept> concept_item = this.prediction_links.PUT_NEW(concept);
+    //    this.prediction_links.change_priority(concept_item.key, 0.99f);
     }
 
     public void remove_prediction_link(Concept concept)
@@ -685,7 +685,7 @@ public class Concept
             todo: use this somewhere
         */
         //Asserts.assert(this.prediction_links.Contains(concept), concept + "must be in prediction links.");
-        this.prediction_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(concept));
+  //      this.prediction_links.TAKE_USING_KEY(Item<Concept>.get_key_from_object(concept));
     }
 
     public void set_explanation_link(Concept concept)

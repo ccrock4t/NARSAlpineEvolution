@@ -11,6 +11,7 @@ using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using static AlpineGridManager;
 using static Directions;
+using static UnityEngine.EventSystems.EventTrigger;
 using Random = UnityEngine.Random;
 
 public class AlpineGridManager : MonoBehaviour
@@ -76,7 +77,7 @@ public class AlpineGridManager : MonoBehaviour
 
 
     // How many FixedUpdate steps per simulation tick
-    private int updatesPerTick = 5;
+    private int updatesPerTick = 10;
 
     private int _fixedUpdateCounter = 0;
 
@@ -402,7 +403,9 @@ public class AlpineGridManager : MonoBehaviour
                     agent.nars.do_working_cycle();
                 }
 
-
+                agent.narsBody.timesteps_alive++;
+                agent.narsBody.energy--;
+                agent.narsBody.remaining_life--;
 
             }
         }   
