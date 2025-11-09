@@ -39,30 +39,30 @@ public class NARSInferenceEngine
         this.truthValueFunctions = new TruthValueFunctions(nars);
     }
 
+
     public List<Sentence> do_semantic_inference_two_premise(Sentence j1, Sentence j2)
     {
-        if (!EvidentialBase.may_interact(j1, j2)) return new();
-
-        List<Sentence>? results;
+        List<Sentence> semantic_inference_two_premise_results = new();
+        if (!EvidentialBase.may_interact(j1, j2)) return semantic_inference_two_premise_results;
 
         try
         {
             if (j1 is Goal g1 && j2 is Judgment judg2)
             {
-                results = do_semantic_inference_goal_judgment(g1, judg2);
+                semantic_inference_two_premise_results.AddRange(do_semantic_inference_goal_judgment(g1, judg2));
             }
             else
             {
-                results = do_semantic_inference_two_judgment(j1, j2);
+                semantic_inference_two_premise_results.AddRange(do_semantic_inference_two_judgment(j1, j2));
             }
         }
         catch (Exception e)
         {
             //Asserts.assert(false, "ERROR: Inference error " + e.ToString() + " between " + j1.ToString() + " and " + j2.ToString());
-            return new();
+            return semantic_inference_two_premise_results;
         }
 
-        return results;
+        return semantic_inference_two_premise_results;
     }
 
     public List<Sentence> do_semantic_inference_two_judgment(Sentence j1, Sentence j2)
@@ -79,11 +79,11 @@ public class NARSInferenceEngine
 
             :returns An array of the derived Sentences, || an empty array if the inputs have evidential overlap
         */
-
+        List<Sentence> semantic_inference_two_judgment_results = new List<Sentence>();
         if (this.nars.config.DEBUG) Debug.Log("Trying inference between: " + get_formatted_string(j1) + " && " + get_formatted_string(j2));
 
-        Sentence derived_sentence;
-
+    
+   
         /*
         ===============================================
         ===============================================
@@ -95,11 +95,11 @@ public class NARSInferenceEngine
         if (j1.evidential_value.confidence == 0 || j2.evidential_value.confidence == 0)
         {
             if (this.nars.config.DEBUG) Debug.Log("Can't do inference between negative premises");
-            return new(); // can't do inference with 2 entirely negative premises
+            return semantic_inference_two_judgment_results; // can't do inference with 2 entirely negative premises
         }
 
+        Sentence derived_sentence;
 
-        List<Sentence> all_derived_sentences = new List<Sentence>();
 
         Term j1_statement = j1.statement;
         Term j2_statement = j2.statement;
@@ -116,18 +116,18 @@ public class NARSInferenceEngine
             // Revision
             // j1 = j2
             */
-            if (j1 is Question) return all_derived_sentences; // can't do revision with questions
+            if (j1 is Question) return semantic_inference_two_judgment_results; // can't do revision with questions
 
             derived_sentence = this.localRules.Revision(j1, j2);  // S-->P
-            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
-            return all_derived_sentences;
+            add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
+            return semantic_inference_two_judgment_results;
         }
 
 
         if (j1.evidential_value.frequency == 0 || j2.evidential_value.frequency == 0)
         {
             if (this.nars.config.DEBUG) Debug.Log("Can't do inference between negative premises");
-            return new(); // can't do inference with 2 entirely negative premises
+            return semantic_inference_two_judgment_results; // can't do inference with 2 entirely negative premises
         }
 
         /*
@@ -148,8 +148,8 @@ public class NARSInferenceEngine
                 if (j2_statement_term.get_copula() == Copula.Implication || j2_statement_term.get_copula() == Copula.PredictiveImplication)
                 {
                     derived_sentence = this.conditionalRules.ConditionalJudgmentDeduction(j2, j1);  // S-->P
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j2, j1);
-                    return all_derived_sentences;
+                    add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j2, j1);
+                    return semantic_inference_two_judgment_results;
                 }
             }
         }
@@ -161,8 +161,8 @@ public class NARSInferenceEngine
                 if (j1_statement_term.get_copula() == Copula.Implication | j1_statement_term.get_copula() == Copula.PredictiveImplication)
                 {
                     derived_sentence = this.conditionalRules.ConditionalJudgmentDeduction(j1, j2);  // S-->P
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
-                    return all_derived_sentences;
+                    add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
+                    return semantic_inference_two_judgment_results;
                 }
             }
         }
@@ -192,14 +192,14 @@ public class NARSInferenceEngine
             if (tautology)
             {
                 if (this.nars.config.DEBUG) Debug.Log("tautology");
-                return all_derived_sentences;  // can't do inference, it will result in tautology
+                return semantic_inference_two_judgment_results;  // can't do inference, it will result in tautology
             }
 
             if (CopulaMethods.is_temporal(j1_statement_term.get_copula()) || (j1 is Judgment && j1.is_event()) || (j2 is Judgment && j2.is_event()))
             {
                 //dont do semantic inference with temporal
                 // todo .. don't do inference with events, it isn't handled gracefully right now
-                return all_derived_sentences;
+                return semantic_inference_two_judgment_results;
             }
             else if (!CopulaMethods.is_symmetric(j1_statement_term.get_copula()) && !CopulaMethods.is_symmetric(j2_statement_term.get_copula()))
             {
@@ -230,13 +230,13 @@ public class NARSInferenceEngine
                 */
 
                 derived_sentence = this.syllogisticRules.Deduction(j1, j2);  // S-->P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Swapped Exemplification
                 */
                 derived_sentence = this.syllogisticRules.Exemplification(j2, j1);  // P-->S
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
             }
             else if (j1_statement_term.get_subject_term() == j2_statement_term.get_subject_term())
@@ -250,43 +250,43 @@ public class NARSInferenceEngine
                 // Induction
                 */
                 derived_sentence = this.syllogisticRules.Induction(j1, j2);  // S-->P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Swapped Induction
                 */
                 derived_sentence = this.syllogisticRules.Induction(j2, j1); // P-->S
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Comparison
                 */
                 derived_sentence = this.syllogisticRules.Comparison(j1, j2);  // S<->P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Intensional Intersection || Disjunction
                 */
                 derived_sentence = this.compositionRules.DisjunctionOrIntensionalIntersection(j1, j2);  // M --> (S | P)
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Extensional Intersection || Conjunction
                 */
                 derived_sentence = this.compositionRules.ConjunctionOrExtensionalIntersection(j1, j2);  // M --> (S & P)
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Extensional Difference
                 */
                 derived_sentence = this.compositionRules.ExtensionalDifference(j1, j2);  // M --> (S - P)
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Swapped Extensional Difference
                 */
                 derived_sentence = this.compositionRules.ExtensionalDifference(j2, j1);  // M --> (P - S)
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
             }
             else if (j1_statement_term.get_predicate_term() == j2_statement_term.get_predicate_term())
             {
@@ -299,13 +299,13 @@ public class NARSInferenceEngine
                 // Abduction
                 */
                 derived_sentence = this.syllogisticRules.Abduction(j1, j2);  // S-->P || S==>P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Swapped Abduction
                 */
                 derived_sentence = this.syllogisticRules.Abduction(j2, j1);  // P-->S || P==>S
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 if (!CopulaMethods.is_first_order(j1_copula))
                 {
@@ -317,7 +317,7 @@ public class NARSInferenceEngine
 
                         if (TermConnectorMethods.is_conjunction(j1_subject_term.connector))
                         {
-                            j1_subject_statement_terms = ((CompoundTerm)j1_subject_term).subterms;
+                            j1_subject_statement_terms = ((CompoundTerm)j1_subject_term).subterms.ToList();
                         }
                         else
                         {
@@ -327,7 +327,7 @@ public class NARSInferenceEngine
 
                         if (TermConnectorMethods.is_conjunction(j2_subject_term.connector))
                         {
-                            j2_subject_statement_terms = ((CompoundTerm)j2_subject_term).subterms;
+                            j2_subject_statement_terms = ((CompoundTerm)j2_subject_term).subterms.ToList();
                         }
                         else
                         {
@@ -356,7 +356,7 @@ public class NARSInferenceEngine
                             else
                             {
                                 derived_sentence = this.conditionalRules.ConditionalConjunctionalAbduction(j2, j1);  // S
-                                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
                             }
                         }
                     }
@@ -365,30 +365,30 @@ public class NARSInferenceEngine
                 // Intensional Intersection Disjunction
                 */
                 derived_sentence = this.compositionRules.DisjunctionOrIntensionalIntersection(j1, j2);  // (P | S) --> M
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Extensional Intersection Conjunction
                 */
                 derived_sentence = this.compositionRules.ConjunctionOrExtensionalIntersection(j1, j2);  // (P & S) --> M
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Intensional Difference
                 */
                 derived_sentence = this.compositionRules.IntensionalDifference(j1, j2);  // (P ~ S) --> M
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
 
                 /*
                 // Swapped Intensional Difference
                 */
                 derived_sentence = this.compositionRules.IntensionalDifference(j2, j1);  // (S ~ P) --> M
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
                 /*
                 // Comparison
                 */
                 derived_sentence = this.syllogisticRules.Comparison(j1, j2);  // S<->P || S<=>P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
             }
 
         }
@@ -400,7 +400,7 @@ public class NARSInferenceEngine
             // Analogy
             */
             derived_sentence = this.syllogisticRules.Analogy(j1, j2);  // S-->P || P-->S
-            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+            add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
         }
         else if (CopulaMethods.is_symmetric(j1_statement_term.get_copula()) && !CopulaMethods.is_symmetric(j2_statement_term.get_copula()))
         {
@@ -410,7 +410,7 @@ public class NARSInferenceEngine
             // Swapped Analogy
             */
             derived_sentence = this.syllogisticRules.Analogy(j2, j1);  // S-->P || P-->S
-            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+            add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
         }
         else if (CopulaMethods.is_symmetric(j1_statement_term.get_copula()) && CopulaMethods.is_symmetric(j2_statement_term.get_copula()))
         {
@@ -420,7 +420,7 @@ public class NARSInferenceEngine
             // Resemblance
             */
             derived_sentence = this.syllogisticRules.Resemblance(j1, j2);  // S<->P
-            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+            add_to_derived_sentences(derived_sentence, semantic_inference_two_judgment_results, j1, j2);
         }
         else if (((j1.statement is StatementTerm) && !j1.get_statement_term().is_first_order()) || ((j2.statement is StatementTerm) && !j2.get_statement_term().is_first_order()))
         {
@@ -456,7 +456,7 @@ public class NARSInferenceEngine
                     */
                     //pass
                     // derived_sentence = this.conditionalRules.ConditionalAnalogy(j2, j1)  // P
-                    // add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                    // add_to_derived_sentences(derived_sentence,semantic_inference_two_judgment_results,j1,j2)
                 }
                 else
                 {
@@ -471,7 +471,7 @@ public class NARSInferenceEngine
                         j2 = S
                         */
                         // derived_sentence = this.conditionalRules.ConditionalDeduction(j1, j2)  // P
-                        // add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                        // add_to_derived_sentences(derived_sentence,semantic_inference_two_judgment_results,j1,j2)
                         //pass
                     }
                     else if (j2.statement == j1_statement_term.get_predicate_term())
@@ -482,7 +482,7 @@ public class NARSInferenceEngine
                         // j2 = P. || (E ==> P)
                         //pass
                         // derived_sentence = this.conditionalRules.ConditionalJudgmentAbduction(j1, j2)  // S.
-                        // add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                        // add_to_derived_sentences(derived_sentence,semantic_inference_two_judgment_results,j1,j2)
                     }
                     else if (TermConnectorMethods.is_conjunction(j1_statement_term.get_subject_term().connector) && !CopulaMethods.is_symmetric(j1_statement_term.get_copula()))
                     {
@@ -492,7 +492,7 @@ public class NARSInferenceEngine
                         */
                         //pass
                         // derived_sentence = this.conditionalRules.ConditionalConjunctionalDeduction(j1,j2)  // (C1 && C2 && ..CN) ==> P
-                        // add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                        // add_to_derived_sentences(derived_sentence,semantic_inference_two_judgment_results,j1,j2)
 
                     }
                     else if (((j1.statement is CompoundTerm) &&
@@ -542,13 +542,13 @@ public class NARSInferenceEngine
         // mark sentences as interacted with each other
         //  j1.mutually_add_to_interacted_sentences(j2)
 
-        if (this.nars.config.DEBUG) Debug.Log("Derived " + all_derived_sentences.Count + " inference results.");
+        if (this.nars.config.DEBUG) Debug.Log("Derived " + semantic_inference_two_judgment_results.Count + " inference results.");
 
 
-        return all_derived_sentences;
+        return semantic_inference_two_judgment_results;
     }
 
-    public List<Sentence>? do_semantic_inference_goal_judgment(Goal j1, Judgment j2)
+    public List<Sentence> do_semantic_inference_goal_judgment(Goal j1, Judgment j2)
     {
         /*
         Derives a new Sentence by performing the appropriate inference rules on the given semantically related sentences.
@@ -562,6 +562,8 @@ public class NARSInferenceEngine
 
         :returns An array of the derived Sentences, or null if the inputs have evidential overlap
         */
+        List<Sentence> do_semantic_inference_goal_judgment_results = new();
+
         if (this.nars.config.DEBUG) Debug.Log("Trying inference between: " + get_formatted_string(j1) + " && " + get_formatted_string(j2));
 
         /*
@@ -571,15 +573,14 @@ public class NARSInferenceEngine
         ===============================================
         ===============================================
         */
-
+ 
         if (j1.evidential_value.confidence == 0 || j2.evidential_value.confidence == 0)
         {
             if (this.nars.config.DEBUG) Debug.Log("Can't do inference between negative premises");
-            return new(); // can't do inference with 2 entirely negative premises
+            return do_semantic_inference_goal_judgment_results; // can't do inference with 2 entirely negative premises
         }
 
 
-        List<Sentence> all_derived_sentences = new List<Sentence>();
 
 
         Term j1_statement = j1.statement; // goal statement
@@ -598,13 +599,13 @@ public class NARSInferenceEngine
                     {
                         // j1 = P!, j2 = (S=>P).
                         derived_sentence = this.conditionalRules.ConditionalGoalDeduction(j1, j2);  // :- S! i.e. (S ==> D)
-                        add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                        add_to_derived_sentences(derived_sentence, do_semantic_inference_goal_judgment_results, j1, j2);
                     }
                     else if (j2_statement.get_subject_term() == j1_statement) 
                     {
                         // j1 = S!, j2 = (S=>P).
                         derived_sentence = this.conditionalRules.ConditionalGoalInduction(j1, j2);  // :- P! i.e. (P ==> D)
-                        add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                        add_to_derived_sentences(derived_sentence, do_semantic_inference_goal_judgment_results, j1, j2);
                     }
                 }
             }
@@ -614,7 +615,7 @@ public class NARSInferenceEngine
                 {
                     // j1 = (C &/ S)!, j2 = C. )
                     derived_sentence = this.conditionalRules.SimplifyConjunctiveGoal(j1, j2);  // S!
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                    add_to_derived_sentences(derived_sentence, do_semantic_inference_goal_judgment_results, j1, j2);
                 }
             }
         }
@@ -625,7 +626,7 @@ public class NARSInferenceEngine
             {
                 // j1 = (C &/ S)!, j2 = C. )
                 derived_sentence = this.conditionalRules.SimplifyConjunctiveGoal(j1, j2);  // S!
-                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                add_to_derived_sentences(derived_sentence, do_semantic_inference_goal_judgment_results, j1, j2);
             }
             else if (j1_statement.connector == TermConnector.Negation)
             {
@@ -634,7 +635,7 @@ public class NARSInferenceEngine
                 {
                     // j1 = (--,(A &/ B))!, j2 = A. )
                     derived_sentence = this.conditionalRules.SimplifyNegatedConjunctiveGoal(j1, j2);  // B!
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2);
+                    add_to_derived_sentences(derived_sentence, do_semantic_inference_goal_judgment_results, j1, j2);
                 }
             }
         }
@@ -651,9 +652,9 @@ public class NARSInferenceEngine
         ===============================================
         */
 
-        if (this.nars.config.DEBUG) Debug.Log("Derived " + all_derived_sentences.Count + " inference results.");
+        if (this.nars.config.DEBUG) Debug.Log("Derived " + do_semantic_inference_goal_judgment_results.Count + " inference results.");
 
-        return all_derived_sentences;
+        return do_semantic_inference_goal_judgment_results;
     }
 
     public List<Sentence> do_temporal_inference_two_premise(Sentence A, Sentence B)

@@ -10,6 +10,7 @@
             Does combine evidential bases in the Resultant Sentence.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -220,7 +221,7 @@ public class ConditionalRules
                 new_intervals.RemoveAt(found_idx);
             }
            
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms, (TermConnector)compound_statement.connector, new_intervals);
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms.ToArray(), (TermConnector)compound_statement.connector, new_intervals);
         }
 
         return this.nars.helperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, this.nars.inferenceEngine.truthValueFunctions.F_Deduction);
@@ -256,7 +257,7 @@ public class ConditionalRules
         Term result_statement;
         if (remaining_subterms.Count == 1)
         {
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms, (TermConnector)j1_statement.connector);
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms.ToArray(), (TermConnector)j1_statement.connector);
         }
         else
         {
@@ -267,7 +268,7 @@ public class ConditionalRules
                 new_intervals = new List<int>(j1_statement.intervals);
                 new_intervals.RemoveAt(found_idx);
             }
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms, (TermConnector)j1_statement.connector, new_intervals);
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(remaining_subterms.ToArray(), (TermConnector)j1_statement.connector, new_intervals);
         }
 
         return this.nars.helperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, this.nars.inferenceEngine.truthValueFunctions.F_Induction);
@@ -316,18 +317,23 @@ public class ConditionalRules
             return null;
         }
 
-        List<Term> subterms = subject_term.subterms;
-        List<Term> subterm_to_remove = new List<Term> { j2.get_statement_term() };
-
-        List<Term> new_subterms = subterms.Except(subterm_to_remove).ToList();  // subtract j2 from j1 subject subterms
+        Term[] subterms = subject_term.subterms;
+        Term subterm_to_remove = j2.get_statement_term();
+        Term[] new_subterms = new Term[subterms.Length - 1];
+        int i = 0;
+        foreach(var subterm in subterms)
+        {
+            if (subterm == subterm_to_remove) continue;
+            new_subterms[i++] = subterm;
+        }
 
         Term new_compound_subject_term;
-        if (new_subterms.Count > 1)
+        if (new_subterms.Length > 1)
         {
             // recreate the conjunctional compound with the new subterms
             new_compound_subject_term = TermHelperFunctions.TryGetCompoundTerm(new_subterms, (TermConnector)subject_term.connector);
         }
-        else if (new_subterms.Count == 1)
+        else if (new_subterms.Length == 1)
         {
             // only 1 subterm, no need to make it a compound
             new_compound_subject_term = new_subterms[0];
@@ -335,10 +341,9 @@ public class ConditionalRules
         else
         {
             // 0 new subterms
-            if (subject_term.subterms.Count > 1)
+            if (subject_term.subterms.Length > 1)
             {
-                new_subterms = new List<Term>(subject_term.subterms);
-                new_subterms.RemoveAt(new_subterms.Count - 1);
+                Array.Copy(subject_term.subterms, new_subterms, new_subterms.Length);
                 new_compound_subject_term = TermHelperFunctions.TryGetCompoundTerm(new_subterms, (TermConnector)subject_term.connector);
             }
             else
@@ -399,27 +404,27 @@ public class ConditionalRules
         CompoundTerm j2_subject_term = (CompoundTerm)j2_statement.get_subject_term();
 
 
-        List<Term> j1_subject_statement_terms;
+        Term[] j1_subject_statement_terms;
         if (TermConnectorMethods.is_conjunction(j1_subject_term.connector))
         {
             j1_subject_statement_terms = j1_subject_term.subterms;
         }
         else
         {
-            j1_subject_statement_terms = new List<Term> { j1_subject_term };
+            j1_subject_statement_terms = new Term[]{ j1_subject_term };
         }
 
-        List<Term> j2_subject_statement_terms;
+        Term[] j2_subject_statement_terms;
         if (TermConnectorMethods.is_conjunction(j2_subject_term.connector))
         {
             j2_subject_statement_terms = j2_subject_term.subterms;
         }
         else
         {
-            j2_subject_statement_terms = new List<Term> { j2_subject_term };
+            j2_subject_statement_terms = new Term[] { j2_subject_term };
         }
 
-        List<Term> difference_of_terms = j1_subject_statement_terms.Except(j2_subject_statement_terms).ToList();
+        Term[] difference_of_terms = j1_subject_statement_terms.Except(j2_subject_statement_terms).ToArray();
 
         //Asserts.assert(difference_of_terms.Count == 1, "Error, should only have one term in set difference: " + difference_of_terms.ToString());
 

@@ -72,7 +72,7 @@ public class Memory
         if (term is CompoundTerm)
         {
             //todo allow array elements
-            for (int i = 0; i < ((CompoundTerm)term).subterms.Count; i++)
+            for (int i = 0; i < ((CompoundTerm)term).subterms.Length; i++)
             {
                 Term subterm = ((CompoundTerm)term).subterms[i];
                 // get/create subterm concepts
@@ -278,7 +278,8 @@ public class Memory
         return best_explanation_belief;
     }
 
-
+    List<double> cdf = new();
+    List<Judgment> candidates = new();
     public Judgment get_random_bag_explanation(Sentence j)
     {
         Concept concept = this.peek_concept(j.statement); // B
@@ -289,10 +290,10 @@ public class Memory
         // Build CDF from confidence weights
         float total = 0.0f;
         int count = concept.explanation_links.GetCount();
-        var cdf = new List<double>();
-        var candidates = new List<Judgment>();
+        cdf.Clear();
+        candidates.Clear();
 
-        foreach(var explanation_concept_item in concept.explanation_links) 
+        foreach (var explanation_concept_item in concept.explanation_links) 
         {
             var explanation_concept = explanation_concept_item.obj;
             var candidate = explanation_concept.belief_table.peek_random_interactable(j);

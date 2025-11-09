@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using static AlpineGridManager;
+using static Directions;
 
 public class NARSBody
 {
@@ -63,7 +64,7 @@ public class NARSBody
     {
         if(food_eaten > 0)
         {
-            return MAX_LIFE - remaining_life;
+            return food_eaten;
         }
         else
         {

@@ -60,13 +60,13 @@ public class TemporalRules
         if (j1.stamp.occurrence_time == j2.stamp.occurrence_time)
         {
             // j1 &| j2
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(new() { j1_statement_term, j2_statement_term }, 
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(new Term[] { j1_statement_term, j2_statement_term }, 
                 TermConnector.ParallelConjunction);
         }
         else if (j1.stamp.occurrence_time < j2.stamp.occurrence_time)
         {
             // j1 &/ j2
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(new() { j1_statement_term, j2_statement_term }, 
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(new Term[] { j1_statement_term, j2_statement_term }, 
                 TermConnector.SequentialConjunction,
                 new List<int>() { nars.helperFunctions.convert_to_interval(math.abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time)) }
             );
@@ -76,7 +76,7 @@ public class TemporalRules
         else if (j2.stamp.occurrence_time < j1.stamp.occurrence_time)
         {
             // j2 &/ j1
-            result_statement = TermHelperFunctions.TryGetCompoundTerm(new() { j2_statement_term, j1_statement_term },
+            result_statement = TermHelperFunctions.TryGetCompoundTerm(new Term[] { j2_statement_term, j1_statement_term },
                 TermConnector.SequentialConjunction,
                 new List<int>() { nars.helperFunctions.convert_to_interval(math.abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time)) }
             );

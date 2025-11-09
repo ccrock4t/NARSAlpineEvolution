@@ -106,6 +106,8 @@ public class NARS
 
         // global buffer
         int buffer_len = this.global_buffer.GetCount();
+
+        if (buffer_len == global_buffer.capacity) Debug.LogWarning("NARS buffer overflow");
         int tasks_left = buffer_len;
         while (tasks_left > 0)
         {
@@ -590,7 +592,7 @@ public class NARS
                         if (sensory_predicate is VariableTerm)
                         {
                            
-                            var subterms = new List<Term>() { ((CompoundTerm)motor_op_statement.get_subject_term()).subterms[0], ((StatementTerm)first_subterm_belief.statement).get_predicate_term() };
+                            var subterms = new Term[]{ ((CompoundTerm)motor_op_statement.get_subject_term()).subterms[0], ((StatementTerm)first_subterm_belief.statement).get_predicate_term() };
                             CompoundTerm unified_motor_compound = TermHelperFunctions.TryGetCompoundTerm(subterms, TermConnector.Product);
                             StatementTerm unified_goal_statement = new(unified_motor_compound, motor_op_statement.get_predicate_term(), Copula.Inheritance);
                             var value = this.inferenceEngine.truthValueFunctions.F_Deduction(
@@ -619,15 +621,15 @@ public class NARS
                     }
                     else
                     {
-                        if(sensory_predicate is VariableTerm)
-                        {
-                            var unification_term = Term.from_string(AlpineGridManager.GetRandomDirectionString());
-                            StatementTerm first_subterm_statement_unified = new StatementTerm(sensory_subject, unification_term, Copula.Inheritance);
-                            first_subterm_statement = first_subterm_statement_unified;
-                        }
-                        //first belief was not positive, so derive a goal to make it positive
-                        Goal first_subterm_goal = (Goal)this.helperFunctions.create_resultant_sentence_one_premise(j, first_subterm_statement, null, j.evidential_value);
-                        this.global_buffer.PUT_NEW(first_subterm_goal);
+                        //if(sensory_predicate is VariableTerm)
+                        //{
+                        //    var unification_term = Term.from_string(AlpineGridManager.GetRandomDirectionString());
+                        //    StatementTerm first_subterm_statement_unified = new StatementTerm(sensory_subject, unification_term, Copula.Inheritance);
+                        //    first_subterm_statement = first_subterm_statement_unified;
+                        //}
+                        ////first belief was not positive, so derive a goal to make it positive
+                        //Goal first_subterm_goal = (Goal)this.helperFunctions.create_resultant_sentence_one_premise(j, first_subterm_statement, null, j.evidential_value);
+                        //this.global_buffer.PUT_NEW(first_subterm_goal);
                     }
                 }
                 else if (statement.connector == TermConnector.Negation && TermConnectorMethods.is_conjunction(((CompoundTerm)statement).subterms[0].connector))
@@ -657,59 +659,63 @@ public class NARS
             {
                 // process j! with random context-relevant explanation E = (P =/> j).
                 int explanation_count = statement_concept.explanation_links.GetCount();
-                var random_belief = this.memory.get_random_bag_explanation(j); // (P =/> j)
 
-
-
-                if (random_belief != null) {
-
-                    CompoundTerm subject = (CompoundTerm)((StatementTerm)random_belief.statement).get_subject_term();
-
-                    var results = this.inferenceEngine.do_semantic_inference_two_premise(j, random_belief); // {E, J!} :- P!
-
-                    foreach (var result in results)
-                    {
-                        if (result.statement is CompoundTerm)
-                        {
-                            bool is_conjunction = TermConnectorMethods.is_conjunction(result.statement.connector);
-                            if (is_conjunction)  // if it's a conjunction (A &/ B), 
-                            {
-
-                                Term first_subterm_statement = ((CompoundTerm)result.statement).subterms[0];
-                                Concept first_subterm_concept = this.memory.peek_concept(first_subterm_statement);
-                                Judgment first_subterm_belief = first_subterm_concept.belief_table.peek_first_interactable(j);
-
-                                Term second_subterm_statement = ((CompoundTerm)result.statement).subterms[1];
-                                Concept second_subterm_concept = this.memory.peek_concept(second_subterm_statement);
-                                Judgment second_subterm_belief = first_subterm_concept.belief_table.peek_first_interactable(j);
-
-                                if (NARSGenome.USE_LEARNING())
-                                {
-                                    if (first_subterm_belief != null
-                                        && this.inferenceEngine.is_positive(first_subterm_belief)
-                                        && second_subterm_statement.is_op())
-                                    {
-                                        // since the contextual event is true,and the second term  is a motor op, form an anticipation for the postcondition
-                                        this.temporal_module.Anticipate(j.get_statement_term());
-                                    }
-                                }
-
-                            }
-                        }
-
-                        this.global_buffer.PUT_NEW(result);
-                    }
-                }
-                else
+                if(explanation_count == 0)
                 {
-
                     if (NARSGenome.USE_LEARNING())
                     {
                         // no explanations, so babble to learn one
                         MotorBabble();
                     }
-                   
+                    return;
                 }
+                foreach (var explanation_concept in statement_concept.explanation_links)
+                {
+                    var random_belief = explanation_concept.obj.belief_table.peek();
+                    if (random_belief != null)
+                    {
+
+                        CompoundTerm subject = (CompoundTerm)((StatementTerm)random_belief.statement).get_subject_term();
+
+                        var results = this.inferenceEngine.do_semantic_inference_two_premise(j, random_belief); // {E, J!} :- P!
+
+                        foreach (var result in results)
+                        {
+                            if (result.statement is CompoundTerm)
+                            {
+                                bool is_conjunction = TermConnectorMethods.is_conjunction(result.statement.connector);
+                                if (is_conjunction)  // if it's a conjunction (A &/ B), 
+                                {
+
+                                    Term first_subterm_statement = ((CompoundTerm)result.statement).subterms[0];
+                                    Concept first_subterm_concept = this.memory.peek_concept(first_subterm_statement);
+                                    Judgment first_subterm_belief = first_subterm_concept.belief_table.peek_first_interactable(j);
+
+                                    Term second_subterm_statement = ((CompoundTerm)result.statement).subterms[1];
+                                    Concept second_subterm_concept = this.memory.peek_concept(second_subterm_statement);
+                                    Judgment second_subterm_belief = first_subterm_concept.belief_table.peek_first_interactable(j);
+
+                                    if (NARSGenome.USE_LEARNING())
+                                    {
+                                        if (first_subterm_belief != null
+                                            && this.inferenceEngine.is_positive(first_subterm_belief)
+                                            && second_subterm_statement.is_op())
+                                        {
+                                            // since the contextual event is true,and the second term  is a motor op, form an anticipation for the postcondition
+                                            this.temporal_module.Anticipate(j.get_statement_term());
+                                        }
+                                    }
+
+                                }
+                            }
+
+                            this.global_buffer.PUT_NEW(result);
+                        }
+                    }
+                }
+
+
+              
               
             }
         }

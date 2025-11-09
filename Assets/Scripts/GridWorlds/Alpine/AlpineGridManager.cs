@@ -10,6 +10,7 @@ using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using static AlpineGridManager;
+using static Directions;
 using Random = UnityEngine.Random;
 
 public class AlpineGridManager : MonoBehaviour
@@ -22,75 +23,7 @@ public class AlpineGridManager : MonoBehaviour
         Water
     }
 
-    public enum Direction
-    {
-        n2x_n2y,
-        n1x_n2y,
-        p0x_n2y,
-        p1x_n2y,
-        p2x_n2y,
 
-        n2x_n1y,
-        n1x_n1y,
-        p0x_n1y,
-        p1x_n1y,
-        p2x_n1y,
-
-        n2x_p0y,
-        n1x_p0y,
-        p0x_p0y,
-        p1x_p0y,
-        p2x_p0y,
-
-        n2x_p1y,
-        n1x_p1y,
-        p0x_p1y,
-        p1x_p1y,
-        p2x_p1y,
-
-        n2x_p2y,
-        n1x_p2y,
-        p0x_p2y,
-        p1x_p2y,
-        p2x_p2y,
-
-
-    }
-
-    // Directions: up, down, left, right
-    private static readonly Vector2Int[] CardinalDirs =
-    {
-        2*Vector2Int.left + 2*Vector2Int.down,  // n2x_n2y
-        1*Vector2Int.left + 2*Vector2Int.down,  // n1x_n2y
-        0*Vector2Int.left + 2*Vector2Int.down,  // p0x_n2y
-        1*Vector2Int.right + 2*Vector2Int.down, // p1x_n2y
-        2*Vector2Int.right + 2*Vector2Int.down, // p2x_n2y
-
-        2*Vector2Int.left + 1*Vector2Int.down,  // n2x_n1y
-        1*Vector2Int.left + 1*Vector2Int.down,  // n1x_n1y
-        0*Vector2Int.left + 1*Vector2Int.down,  // p0x_n1y
-        1*Vector2Int.right + 1*Vector2Int.down, // p1x_n1y
-        2*Vector2Int.right + 1*Vector2Int.down, // p2x_n1y
-
-        2*Vector2Int.left + 0*Vector2Int.down,  // n2x_p0y
-        1*Vector2Int.left + 0*Vector2Int.down,  // n1x_p0y
-        0*Vector2Int.left + 0*Vector2Int.down,  // p0x_p0y (center)
-        1*Vector2Int.right + 0*Vector2Int.down, // p1x_p0y
-        2*Vector2Int.right + 0*Vector2Int.down, // p2x_p0y
-
-        2*Vector2Int.left + 1*Vector2Int.up,    // n2x_p1y
-        1*Vector2Int.left + 1*Vector2Int.up,    // n1x_p1y
-        0*Vector2Int.left + 1*Vector2Int.up,    // p0x_p1y
-        1*Vector2Int.right + 1*Vector2Int.up,   // p1x_p1y
-        2*Vector2Int.right + 1*Vector2Int.up,   // p2x_p1y
-
-        2*Vector2Int.left + 2*Vector2Int.up,    // n2x_p2y
-        1*Vector2Int.left + 2*Vector2Int.up,    // n1x_p2y
-        0*Vector2Int.left + 2*Vector2Int.up,    // p0x_p2y
-        1*Vector2Int.right + 2*Vector2Int.up,   // p1x_p2y
-        2*Vector2Int.right + 2*Vector2Int.up,   // p2x_p2y
-
-    };
 
     public class Agent
     {
@@ -133,8 +66,6 @@ public class AlpineGridManager : MonoBehaviour
 
     Dictionary<Agent, Vector2Int> agentToPos = new();
 
-
-
     public static AlpineGridManager Instance;
 
     public int timestep = 0;
@@ -144,13 +75,22 @@ public class AlpineGridManager : MonoBehaviour
     public const int ENERGY_IN_FOOD = 10;
 
 
+    // How many FixedUpdate steps per simulation tick
+    private int updatesPerTick = 5;
 
-    public const int NUM_OF_NARS_AGENTS = 50;
+    private int _fixedUpdateCounter = 0;
+
+
+    public const int NUM_OF_NARS_AGENTS = 25;
     public const int NUM_OF_GRASS = 200;
     AnimatTable table;
 
     public TMP_Text timestepTXT;
     public TMP_Text scoreTXT;
+
+    private string _csvPath;
+    private StreamWriter _csv;
+
 
     void Awake()
     {
@@ -158,8 +98,7 @@ public class AlpineGridManager : MonoBehaviour
                 table = new(AnimatTable.SortingRule.sorted,AnimatTable.ScoreType.objective_fitness);
     }
     // --- CSV logging ---
-    private string _csvPath;
-    private StreamWriter _csv;
+
 
 
     void Start()
@@ -271,11 +210,6 @@ public class AlpineGridManager : MonoBehaviour
         timestepTXT.text = "Timestep: " + timestep;
         scoreTXT.text = "High Score: " + high_score;
     }
-
-    // How many FixedUpdate steps per simulation tick
-    private int updatesPerTick = 10;
-
-    private int _fixedUpdateCounter = 0;
 
     void FixedUpdate()
     {
@@ -456,7 +390,7 @@ public class AlpineGridManager : MonoBehaviour
             else
             {
                 actor_locations.Add(agent_pos);
-                for (int i =0; i<10; i++)
+                for (int i =0; i<4; i++)
                 {
                     agent.narsBody.Sense(agent_pos, this);
                     // enter instinctual goals
@@ -496,16 +430,7 @@ public class AlpineGridManager : MonoBehaviour
                 var eatTerm = kvp.Value;
                 float activation = agent.nars.GetGoalActivation(eatTerm);
                 if (activation < agent.nars.config.T) continue;
-                if (activation > max_eat_activation)
-                {
-                    dirtoeat = kvp.Key;
-                    max_eat_activation = activation;
-                }
-
-            }
-            if (dirtoeat != null)
-            {
-                var eatLocation = fromLocation + GetMovementVectorFromDirection((Direction)dirtoeat);
+                var eatLocation = fromLocation + GetMovementVectorFromDirection((Direction)kvp.Key);
                 TryEatEntity(agent, eatLocation);
             }
 

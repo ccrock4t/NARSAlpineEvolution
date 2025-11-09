@@ -5,15 +5,16 @@ using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using static Directions;
 using static MutationHelpers;
 public class NARSGenome
 {
-    const float CHANCE_TO_MUTATE_BELIEF_CONTENT = 0.35f;
+    const float CHANCE_TO_MUTATE_BELIEF_CONTENT = 0.8f;
     const float CHANCE_TO_MUTATE_TRUTH_VALUES = 0.8f;
     const float CHANCE_TO_MUTATE_PERSONALITY_PARAMETERS = 0.8f;
     const float CHANCE_TO_MUTATE_BELIEFS = 0.8f;
 
-    const bool ALLOW_VARIABLES = false;
+    const bool ALLOW_VARIABLES = true;
 
     public enum NARS_Evolution_Type
     {
@@ -82,12 +83,12 @@ public class NARSGenome
     }
 
     public static bool sensorymotor_statements_initialized = false;
-    public static Dictionary<AlpineGridManager.Direction, StatementTerm> move_op_terms = new();
-    public static Dictionary<AlpineGridManager.Direction, StatementTerm> eat_op_terms = new();
+    public static Dictionary<Direction, StatementTerm> move_op_terms = new();
+    public static Dictionary<Direction, StatementTerm> eat_op_terms = new();
 
-    public static Dictionary<AlpineGridManager.Direction,StatementTerm> grass_seen_terms = new();
-    public static Dictionary<AlpineGridManager.Direction, StatementTerm> goat_seen_terms = new();
-    public static Dictionary<AlpineGridManager.Direction, StatementTerm> water_seen = new();
+    public static Dictionary<Direction,StatementTerm> grass_seen_terms = new();
+    public static Dictionary<Direction, StatementTerm> goat_seen_terms = new();
+    public static Dictionary<Direction, StatementTerm> water_seen = new();
 
     public static StatementTerm energy_increasing;
 
@@ -179,9 +180,9 @@ public class NARSGenome
     {
         if (!sensorymotor_statements_initialized)
         {
-            for(int i=0; i < Enum.GetValues(typeof(AlpineGridManager.Direction)).Length; i++)
+            for(int i=0; i < Enum.GetValues(typeof(Direction)).Length; i++)
             {
-                var dir = (AlpineGridManager.Direction)i;
+                var dir = (Direction)i;
                 move_op_terms.Add(dir, (StatementTerm)Term.from_string("((*,{SELF}, " + dir + ") --> move)"));
                 eat_op_terms.Add(dir, (StatementTerm)Term.from_string("((*,{SELF}, " + dir + ") --> eat)"));
 
@@ -378,7 +379,7 @@ public class NARSGenome
     }
 
     private static Vector2 GetKRange() => new(1f, 10f);
-    private static Vector2 GetTRange() => new(0f, 1f);
+    private static Vector2 GetTRange() => new(0.51f, 1f);
     private static Vector2 GetTimeProjectionEventRange() => new(0.0000001f, 10f);
     private static Vector2 GetTimeProjectionGoalRange() => new(0.0000001f, 10f);
     private static Vector2 GetForgettingRateRange() => new(1, 250f);
@@ -450,15 +451,15 @@ public class NARSGenome
             {
                 int r = UnityEngine.Random.Range(0, 100); // 0–99
 
-                if (r < 30)
+                if (r < 25)
                 {
                     AddNewRandomBelief();
                 }
-                else if (r < 60)
+                else if (r < 50)
                 {
                     RemoveRandomBelief();
                 }
-                else if (r < 90)
+                else if (r < 75)
                 {
                     ModifyRandomBelief();
                 }
@@ -493,7 +494,7 @@ public class NARSGenome
         if (rnd < CHANCE_TO_MUTATE_TRUTH_VALUES)
         {
             const float CHANCE_TO_REPLACE_TRUTH_VALUE = 0.05f;
-            const float CHANCE_TO_MUTATE = 0.6f;
+            const float CHANCE_TO_MUTATE = 0.5f;
             for (int i = 0; i < this.beliefs.Count; i++)
             {
                 EvolvableSentence sentence = this.beliefs[i];
@@ -562,7 +563,7 @@ public class NARSGenome
         // tweakable: probability to *replace* a field instead of perturbing it
         const float CHANCE_TO_REPLACE_PARAM = 0.05f;
 
-        const float CHANCE_TO_MUTATE = 0.5f;
+        const float CHANCE_TO_MUTATE = 0.6f;
 
         // --- k ---
         var kRange = GetKRange();
