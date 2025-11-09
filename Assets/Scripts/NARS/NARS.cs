@@ -107,7 +107,7 @@ public class NARS
         // global buffer
         int buffer_len = this.global_buffer.GetCount();
 
-        if (buffer_len == global_buffer.capacity) Debug.LogWarning("NARS buffer overflow");
+        if (buffer_len >= 3 * global_buffer.capacity / 4) Debug.LogWarning("NARS buffer about  to overflow");
         int tasks_left = buffer_len;
         while (tasks_left > 0)
         {
@@ -621,15 +621,15 @@ public class NARS
                     }
                     else
                     {
-                        //if(sensory_predicate is VariableTerm)
-                        //{
-                        //    var unification_term = Term.from_string(AlpineGridManager.GetRandomDirectionString());
-                        //    StatementTerm first_subterm_statement_unified = new StatementTerm(sensory_subject, unification_term, Copula.Inheritance);
-                        //    first_subterm_statement = first_subterm_statement_unified;
-                        //}
-                        ////first belief was not positive, so derive a goal to make it positive
-                        //Goal first_subterm_goal = (Goal)this.helperFunctions.create_resultant_sentence_one_premise(j, first_subterm_statement, null, j.evidential_value);
-                        //this.global_buffer.PUT_NEW(first_subterm_goal);
+                        if (sensory_predicate is VariableTerm)
+                        {
+                            var unification_term = Term.from_string(AlpineGridManager.GetRandomDirectionString());
+                            StatementTerm first_subterm_statement_unified = new StatementTerm(sensory_subject, unification_term, Copula.Inheritance);
+                            first_subterm_statement = first_subterm_statement_unified;
+                        }
+                        //first belief was not positive, so derive a goal to make it positive
+                        Goal first_subterm_goal = (Goal)this.helperFunctions.create_resultant_sentence_one_premise(j, first_subterm_statement, null, j.evidential_value);
+                        this.global_buffer.PUT_NEW(first_subterm_goal);
                     }
                 }
                 else if (statement.connector == TermConnector.Negation && TermConnectorMethods.is_conjunction(((CompoundTerm)statement).subterms[0].connector))
@@ -669,10 +669,10 @@ public class NARS
                     }
                     return;
                 }
-                foreach (var explanation_concept in statement_concept.explanation_links)
-                {
-                    var random_belief = explanation_concept.obj.belief_table.peek();
-                    if (random_belief != null)
+               // foreach (var explanation_concept in statement_concept.explanation_links)
+               // {
+                    var random_belief = this.memory.get_random_bag_explanation(j); //explanation_concept.obj.belief_table.peek();
+                if (random_belief != null)
                     {
 
                         CompoundTerm subject = (CompoundTerm)((StatementTerm)random_belief.statement).get_subject_term();
@@ -712,7 +712,7 @@ public class NARS
                             this.global_buffer.PUT_NEW(result);
                         }
                     }
-                }
+                //}
 
 
               

@@ -14,7 +14,7 @@ public class NARSGenome
     const float CHANCE_TO_MUTATE_PERSONALITY_PARAMETERS = 0.8f;
     const float CHANCE_TO_MUTATE_BELIEFS = 0.8f;
 
-    const bool ALLOW_VARIABLES = true;
+    const bool ALLOW_VARIABLES = false;
 
     public enum NARS_Evolution_Type
     {

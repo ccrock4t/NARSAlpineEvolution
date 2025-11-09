@@ -31,7 +31,7 @@ public class NARSConfig {
     public int ANTICIPATION_WINDOW = 5; //how many working cycles to expect an anticipation
 
     public int GLOBAL_BUFFER_CAPACITY = 10000;
-    public int CONCEPT_LINK_CAPACITY = 100;  // how many of each concept link can this NARS have?
+    public int CONCEPT_LINK_CAPACITY = 1000;  // how many of each concept link can this NARS have?
 
     /*
         Sensors

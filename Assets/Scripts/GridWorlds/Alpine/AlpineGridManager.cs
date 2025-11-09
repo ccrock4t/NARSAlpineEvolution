@@ -8,6 +8,7 @@ using TMPro;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
+using UnityEditor;
 using UnityEngine;
 using static AlpineGridManager;
 using static Directions;
@@ -63,7 +64,6 @@ public class AlpineGridManager : MonoBehaviour
 
     public TileType[,] grid;
     public GameObject[,] gridGameobjects; // tracks the single occupant for each tile
-    public Agent[,] gridAgents; // tracks the single occupant for each tile
 
     Dictionary<Agent, Vector2Int> agentToPos = new();
 
@@ -71,13 +71,14 @@ public class AlpineGridManager : MonoBehaviour
 
     public int timestep = 0;
     public float high_score;
+    public int largest_genome;
 
     // --- Tick settings ---
     public const int ENERGY_IN_FOOD = 10;
 
 
     // How many FixedUpdate steps per simulation tick
-    private int updatesPerTick = 10;
+    private int updatesPerTick = 5;
 
     private int _fixedUpdateCounter = 0;
 
@@ -88,6 +89,7 @@ public class AlpineGridManager : MonoBehaviour
 
     public TMP_Text timestepTXT;
     public TMP_Text scoreTXT;
+    public TMP_Text genomeSizeTXT;
 
     private string _csvPath;
     private StreamWriter _csv;
@@ -210,6 +212,7 @@ public class AlpineGridManager : MonoBehaviour
     {
         timestepTXT.text = "Timestep: " + timestep;
         scoreTXT.text = "High Score: " + high_score;
+        genomeSizeTXT.text = "Largest genome: " + largest_genome;
     }
 
     void FixedUpdate()
@@ -223,11 +226,18 @@ public class AlpineGridManager : MonoBehaviour
 
             StepSimulation();
 
+            int guard = 0;
             while (agentToPos.Count < NUM_OF_NARS_AGENTS)
-                SpawnNewAgent();
-
+            {
+                if (!SpawnNewAgent()) break;
+                if (++guard > 2000) break; // extra safety guard
+            }
+            guard = 0;
             while (placedGrass < NUM_OF_GRASS)
-                SpawnNewGrass();
+            {
+                if (!SpawnNewGrass()) break;
+                if (++guard > 2000) break; // extra safety guard
+            }
 
             UpdateUI();
             WriteCsvRow();   // still runs on each tick
@@ -235,27 +245,28 @@ public class AlpineGridManager : MonoBehaviour
     }
 
 
-    private void SpawnNewGrass()
+    private bool SpawnNewGrass()
     {
-        if (!TryFindRandomEmptyCell(out var grassPos)) return;
-        if (PlaceObject(grassPrefab, grassPos, TileType.Grass)) placedGrass++;
+        if (!TryFindRandomEmptyCell(out var grassPos)) return false;
+        if (!PlaceObject(grassPrefab, grassPos, TileType.Grass)) return false;
+        placedGrass++;
+        return true;
     }
 
-    private void SpawnNewAgent()
+    private bool SpawnNewAgent()
     {
-       
-
-        // Place the visual/object
-       
+        // New agent was placed?
+        bool placedAny = false;
 
         int newagent = UnityEngine.Random.Range(0, 50);
-        if(newagent == 0 || table.Count() < 2)
+        if (newagent == 0 || table.Count() < 2)
         {
-            if (!TryFindRandomEmptyCell(out var pos)) return; // grid full
-            if (!PlaceObject(goatPrefab, pos, TileType.Goat)) return;
+            if (!TryFindRandomEmptyCell(out var pos)) return false;
+            if (!PlaceObject(goatPrefab, pos, TileType.Goat)) return false;
+
             var agent = new Agent();
-            gridAgents[pos.x, pos.y] = agent;
             agentToPos.Add(agent, pos);
+            placedAny = true;
         }
         else
         {
@@ -264,27 +275,22 @@ public class AlpineGridManager : MonoBehaviour
 
             foreach (var genome in new_genomes)
             {
-                if (!TryFindRandomEmptyCell(out var pos)) return; // grid full
+                if (!TryFindRandomEmptyCell(out var pos)) return placedAny; // no more room
                 if (!PlaceObject(goatPrefab, pos, TileType.Goat)) continue;
-                // Create and register the agent
-                var agent = new Agent(genome);
-                gridAgents[pos.x, pos.y] = agent;
-                agentToPos.Add(agent, pos);
 
+                var agent = new Agent(genome);
+                agentToPos.Add(agent, pos);
+                placedAny = true;
             }
         }
-
-
-
+        return placedAny;
     }
-
 
     bool IsCellEmpty(Vector2Int p)
     {
         return IsInBounds(p)
             && grid[p.x, p.y] == TileType.Empty
-            && gridGameobjects[p.x, p.y] == null
-            && gridAgents[p.x, p.y] == null;
+            && gridGameobjects[p.x, p.y] == null;
     }
 
     bool TryFindRandomEmptyCell(out Vector2Int pos, int maxAttempts = 2000)
@@ -333,7 +339,6 @@ public class AlpineGridManager : MonoBehaviour
     {
         grid = new TileType[width, height];
         gridGameobjects = new GameObject[width, height];
-        gridAgents = new Agent[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -363,14 +368,13 @@ public class AlpineGridManager : MonoBehaviour
             if (PlaceObject(goatPrefab, goatPos, TileType.Goat))
             {
                 var agent = new Agent();
-                gridAgents[goatPos.x, goatPos.y] = agent;
                 agentToPos.Add(agent, goatPos);
                 spawned++;
             }
         }
     }
 
-    List<Vector2Int> actor_locations = new List<Vector2Int>();
+    List<(Vector2Int, Agent)> actor_locations = new();
     // --------------------------------------------------
     //  SIMULATION STEP
     // --------------------------------------------------
@@ -386,11 +390,11 @@ public class AlpineGridManager : MonoBehaviour
 
             if (agent.narsBody.energy <= 0 || agent.narsBody.remaining_life <= 0)
             {
-                KillAgent(agent_pos);
+                KillAgent(agent,agent_pos);
             }
             else
             {
-                actor_locations.Add(agent_pos);
+                actor_locations.Add((agent_pos, agent));
                 for (int i =0; i<4; i++)
                 {
                     agent.narsBody.Sense(agent_pos, this);
@@ -416,13 +420,13 @@ public class AlpineGridManager : MonoBehaviour
 
 
         // Try to move each actor one step into a random valid neighboring cell.
-        foreach (var fromLocation in actor_locations)
+        foreach (var actor in actor_locations)
         {
             // If something already moved out/in earlier this tick, skip if empty now.
+            var fromLocation = actor.Item1;
+            var agent = actor.Item2;
             var type = grid[fromLocation.x, fromLocation.y];
             if (!IsAgent(type)) continue;
-
-            var agent = gridAgents[fromLocation.x, fromLocation.y];
 
             // try eat
             Direction? dirtoeat = null;
@@ -467,16 +471,20 @@ public class AlpineGridManager : MonoBehaviour
 
 
 
-    void KillAgent(Vector2Int agentPos)
+    void KillAgent(Agent agent, Vector2Int agentPos)
     {
-        var agent = gridAgents[agentPos.x, agentPos.y];
         grid[agentPos.x, agentPos.y] = TileType.Empty;
-        gridAgents[agentPos.x, agentPos.y] = null;
         var score = agent.narsBody.GetFitness();
         table.TryAdd(score, agent.genome);
         if(score > high_score)
         {
             high_score = score;
+            UpdateUI();
+        }
+
+        if(agent.genome.beliefs.Count > largest_genome)
+        {
+            largest_genome = agent.genome.beliefs.Count;
             UpdateUI();
         }
      
@@ -532,8 +540,6 @@ public class AlpineGridManager : MonoBehaviour
 
         grid[to.x, to.y] = from_type;
         grid[from.x, from.y] = TileType.Empty;
-        gridAgents[to.x, to.y] = agent;
-        gridAgents[from.x, from.y] =null;
 
         agentToPos[agent] = to;
     }

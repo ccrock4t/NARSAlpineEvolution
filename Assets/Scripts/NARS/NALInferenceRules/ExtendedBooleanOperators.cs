@@ -29,13 +29,13 @@ public static class ExtendedBooleanOperators
                 argv1*argv2*...*argvn
         */
         //return band_average(argv);
-        float res = argv[0];
-        for (int i = 1; i < argv.Length; i++)
-        {
-            float arg = argv[i];
-            res *= arg;
-        }
-       // var res = band_geometric_average(argv);
+        //float res = argv[0];
+        //for (int i = 1; i < argv.Length; i++)
+        //{
+        //    float arg = argv[i];
+        //    res *= arg;
+        //}
+        var res = band_geometric_average(argv);
         return res;
     }
 
