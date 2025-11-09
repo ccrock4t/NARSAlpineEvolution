@@ -437,7 +437,16 @@ public class AlpineGridManager : MonoBehaviour
                 var eatTerm = kvp.Value;
                 float activation = agent.nars.GetGoalActivation(eatTerm);
                 if (activation < agent.nars.config.T) continue;
-                var eatLocation = fromLocation + GetMovementVectorFromDirection((Direction)kvp.Key);
+                if(activation > max_eat_activation)
+                {
+                    dirtoeat = kvp.Key;
+                }
+              
+            }
+
+            if(dirtoeat != null)
+            {
+                var eatLocation = fromLocation + GetMovementVectorFromDirection((Direction)dirtoeat);
                 TryEatEntity(agent, eatLocation);
             }
 
