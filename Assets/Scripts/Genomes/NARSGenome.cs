@@ -694,6 +694,7 @@ public class NARSGenome
 
     public StatementTerm GetRandomSensoryTerm()
     {
+        if (UnityEngine.Random.value < 0.05) return energy_increasing;
         int rnd = UnityEngine.Random.Range(0, SENSORY_TERM_SET.Count);
         return SENSORY_TERM_SET[rnd];
     }
