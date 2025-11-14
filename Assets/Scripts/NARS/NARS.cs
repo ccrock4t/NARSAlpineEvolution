@@ -131,19 +131,6 @@ public class NARS
             });
         }
 
-/*                #todo this.temporal_module.process_anticipations()
-
-                // debug statements
-                if(this.nars.config.DEBUG)
-                    Debug.Log("operation queue: " + str(len(this.operation_queue)))
-                    Debug.Log("anticipations queue: " + str(len(this.temporal_module.anticipations_queue)))
-                    Debug.Log("global buffer: " + str(len(this.global_buffer)))
-
-
-                if WorldConfig.USE_PROFILER:
-                    pstats.Stats(this.pr).sort_stats('tottime').print_stats(10) #tottime == time spent in the function alone, cumtime == including subfunctions
-                    this.pr.enable()
-        */
     }
 
 
@@ -722,10 +709,9 @@ public class NARS
     }
 
 
-
-
     void MotorBabble()
     {
+        if (UnityEngine.Random.value < 0.98f) return;
         var motor_terms = NARSGenome.MOTOR_TERM_SET;
         int rnd = UnityEngine.Random.Range(0, motor_terms.Count);
         var motor_term = motor_terms[rnd];

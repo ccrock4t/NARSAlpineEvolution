@@ -30,7 +30,7 @@ public class NARSBody
             var neighbor_type = gridManager.grid[neighbor_pos.x, neighbor_pos.y];
             var sensor_term = GetSensorTermForTileTypeAndDirection(neighbor_type, direction);
             if(sensor_term == null) continue;
-            var sensation = new Judgment(this.nars, sensor_term, new(1.0f, 0.99f));
+            var sensation = new Judgment(this.nars, sensor_term, new(1.0f, 0.99f), nars.current_cycle_number);
             nars.SendInput(sensation);
         }
 

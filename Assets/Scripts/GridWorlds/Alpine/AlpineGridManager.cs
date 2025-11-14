@@ -525,6 +525,8 @@ public class AlpineGridManager : MonoBehaviour
         agent.narsBody.energy = ENERGY_IN_FOOD;
         agent.narsBody.food_eaten++;
         placedGrass--;
+        var ev = new Judgment(agent.nars, NARSGenome.energy_increasing, new(1.0f, 0.99f), occurrence_time: agent.nars.current_cycle_number);
+        agent.nars.SendInput(ev);
     }
     void MoveEntity(Vector2Int from, Vector2Int to, Agent agent)
     {

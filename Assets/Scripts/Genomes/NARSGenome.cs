@@ -16,6 +16,8 @@ public class NARSGenome
 
     const bool ALLOW_VARIABLES = false;
 
+    public static bool USE_GENERALIZATION = true;
+
     public enum NARS_Evolution_Type
     {
         NARS_NO_CONTINGENCY_FIXED_PERSONALITY_LEARNING,
@@ -33,7 +35,7 @@ public class NARSGenome
         NARS_EVOLVE_PERSONALITY_AND_CONTINGENCIES_NO_LEARNING
     }
 
-    public static NARS_Evolution_Type NARS_EVOLVE_TYPE = NARS_Evolution_Type.NARS_EVOLVE_PERSONALITY_AND_CONTINGENCIES_NO_LEARNING;
+    public static NARS_Evolution_Type NARS_EVOLVE_TYPE = NARS_Evolution_Type.NARS_EVOLVE_PERSONALITY_LEARNING;
 
 
     public static bool RANDOM_PERSONALITY()
@@ -421,6 +423,8 @@ public class NARSGenome
 
 
     static Vector2 truth_range = new(0f, 1f);
+
+
     public void Mutate()
     {
 

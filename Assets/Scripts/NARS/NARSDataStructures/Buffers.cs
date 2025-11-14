@@ -7,6 +7,8 @@ using Priority_Queue;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using UnityEngine;
+using static NARSGenome;
 
 
 public class Buffer<T> : ItemContainer<T>
@@ -160,13 +162,6 @@ public class TemporalModule
         if (numOfEvents == 0) return;
 
 
-        void ProcessSentence(Sentence derivedSentence)
-        {
-            if (derivedSentence != null && this.nars != null)
-            {
-                this.nars.global_buffer.PUT_NEW(derivedSentence);
-            }
-        }
 
         // Loop over all earlier events A
         for (int i = 0; i < numOfEvents - 2; i++)
@@ -215,16 +210,77 @@ public class TemporalModule
                     var conjunction = this.nars.inferenceEngine.temporalRules.TemporalIntersection(eventA, eventB);
                  
                     conjunction.stamp.occurrence_time = eventA.stamp.occurrence_time;
-                    var implication = this.nars.inferenceEngine.temporalRules.TemporalInduction(conjunction, eventC);
+                    var implication = (Judgment)this.nars.inferenceEngine.temporalRules.TemporalInduction(conjunction, eventC);
                     implication.evidential_value.frequency = 1.0f;
                     implication.evidential_value.confidence = this.nars.helperFunctions.get_unit_evidence();
-                    ProcessSentence(implication);
+                  
+                    this.nars.global_buffer.PUT_NEW(implication);
+
+                    if (NARSGenome.USE_GENERALIZATION)
+                    {
+                        Judgment generalization = Generalize(implication);
+                        if (generalization != null)
+                        {
+                            this.nars.global_buffer.PUT_NEW(generalization);
+                        }
+
+                    }
 
                 }
 
             }
         }
     }
+
+    public Judgment Generalize(Judgment concrete_implication) { 
+    
+
+
+        string old_statement_string = concrete_implication.statement.ToString();
+
+        // (S &/ ^M =/> P)
+        StatementTerm implication = (StatementTerm)concrete_implication.statement;
+
+        CompoundTerm subject = (CompoundTerm)implication.get_subject_term();
+        StatementTerm predicate = (StatementTerm)implication.get_predicate_term();
+
+        StatementTerm new_statement;
+
+        StatementTerm S = (StatementTerm)subject.subterms[0];
+        StatementTerm M = (StatementTerm)subject.subterms[1];
+
+        Term S_predicate = S.get_predicate_term();
+        Term M_argument = ((CompoundTerm)M.get_subject_term()).subterms[1];
+
+        StatementTerm new_S = null;
+        StatementTerm new_M = null;
+
+        if (S_predicate is AtomicTerm && M_argument is AtomicTerm)
+        {
+            if (S_predicate != M_argument) return null; // invalid for generalization
+            // turn from concrete term into variable
+            new_S = new StatementTerm(S.get_subject_term(), new VariableTerm("x", VariableTerm.VariableType.Dependent), Copula.Inheritance);
+            new_M = new StatementTerm(Term.from_string("(*,{SELF},#x)"), M.get_predicate_term(), Copula.Inheritance);
+        }
+        else
+        {
+            Debug.LogError("Error");
+            return null;
+        }
+
+        if(predicate == energy_increasing)
+        {
+            int h = 1;
+            UnityEngine.Debug.LogError("generalization formed");
+        }
+
+        new_statement = CreateContingencyStatement(new_S, new_M, predicate);
+
+        Judgment generalization = new(this.nars, new_statement, new(1.0f,0.99f));
+
+        return generalization;
+    }
+
 
     public struct Anticipation
     {
