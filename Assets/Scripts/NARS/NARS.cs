@@ -87,6 +87,7 @@ public class NARS
         this.config.MAX_EVIDENTIAL_BASE_LENGTH = nars_genome.personality_parameters.Evidential_Base_Length;
         this.config.PROJECTION_DECAY_EVENT = nars_genome.personality_parameters.Time_Projection_Event;
         this.config.PROJECTION_DECAY_DESIRE = nars_genome.personality_parameters.Time_Projection_Goal;
+        this.config.GENERALIZATION_CONFIDENCE = nars_genome.personality_parameters.Generalization_Confidence;
         
     }
 

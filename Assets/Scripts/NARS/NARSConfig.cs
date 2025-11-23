@@ -86,4 +86,6 @@ public class NARSConfig {
     public const float DEFAULT_QUEST_PRIORITY = 0.9f;
 
     public float FORGETTING_RATE = 1;
+
+    public float GENERALIZATION_CONFIDENCE { get; internal set; }
 }

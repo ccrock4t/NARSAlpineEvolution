@@ -177,6 +177,15 @@ public class AlpineGridManager : MonoBehaviour
         var best = table.GetBest();
         if (best.HasValue) maxTable = best.Value.score;
 
+        float total_confidence = 0;
+        foreach(var animat in table.table)
+        {
+            total_confidence += animat.data.personality_parameters.Generalization_Confidence;
+        }
+
+        float avg_confience = 0;
+        if(table.table.Count > 0) avg_confience = total_confidence / table.table.Count;
+
         // mean (average) and median
         int count = table.Count();
         float mean = (count > 0) ? (table.total_score / count) : 0f;
@@ -185,7 +194,8 @@ public class AlpineGridManager : MonoBehaviour
         string line = string.Join(",",
             maxTable.ToString(CultureInfo.InvariantCulture),
             mean.ToString(CultureInfo.InvariantCulture),
-            median.ToString(CultureInfo.InvariantCulture)
+            median.ToString(CultureInfo.InvariantCulture),
+            avg_confience.ToString(CultureInfo.InvariantCulture)
         );
 
         _csv.WriteLine(line);

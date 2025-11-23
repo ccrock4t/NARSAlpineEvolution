@@ -14,7 +14,7 @@ public class NARSGenome
     const float CHANCE_TO_MUTATE_PERSONALITY_PARAMETERS = 0.8f;
     const float CHANCE_TO_MUTATE_BELIEFS = 0.8f;
 
-    const bool ALLOW_VARIABLES = false;
+    const bool ALLOW_VARIABLES = true;
 
     public static bool USE_GENERALIZATION = true;
 
@@ -115,6 +115,8 @@ public class NARSGenome
         public float Time_Projection_Event;
         public float Time_Projection_Goal;
 
+        public float Generalization_Confidence;
+
         public float Get(int i)
         {
             if (i == 0) return k;
@@ -126,6 +128,7 @@ public class NARSGenome
             else if (i == 6) return Evidential_Base_Length;
             else if (i == 7) return Time_Projection_Event;
             else if (i == 8) return Time_Projection_Goal;
+            else if (i == 9) return Generalization_Confidence;
             else Debug.LogError("error"); 
             return -1;
         }
@@ -141,6 +144,7 @@ public class NARSGenome
             else if (i == 6) return "Evidential_Base_Length";
             else if (i == 7) return "Time_Projection_Event";
             else if (i == 8) return "Time_Projection_Goal";
+            else if (i == 9) return "Generalization_Confidence";
             else Debug.LogError("error");
             return "";
         }
@@ -157,18 +161,17 @@ public class NARSGenome
             else if (i == 6) Evidential_Base_Length = (int)value;
             else if (i == 7) Time_Projection_Event = (float)value;
             else if (i == 8) Time_Projection_Goal = (float)value;
+            else if (i == 9) Generalization_Confidence = (float)value;
             else Debug.LogError("error");
         }
 
         public static int GetParameterCount()
         {
-            return 9;
+            return 10;
         }
     }
 
     public PersonalityParameters personality_parameters;
-
-    public const int num_of_personality_parameters = 2;
 
 
     const int MAX_INITIAL_BELIEFS = 5;
@@ -293,6 +296,9 @@ public class NARSGenome
         // Time ProjectionGoal
         personality_parameters.Time_Projection_Goal = 1;
 
+        // Generalization Confidence
+        personality_parameters.Generalization_Confidence = 0.99f;
+
 
         return personality_parameters;
     }
@@ -334,6 +340,10 @@ public class NARSGenome
         // Time ProjectionGoal
         var timeProjectionGoalRange = GetTimeProjectionGoalRange();
         personality_parameters.Time_Projection_Goal = UnityEngine.Random.Range(timeProjectionGoalRange.x, timeProjectionGoalRange.y);
+
+        // Time ProjectionGoal
+        var generalizationConfidenceRange = GetGeneralizationConfidenceRange();
+        personality_parameters.Generalization_Confidence = UnityEngine.Random.Range(generalizationConfidenceRange.x, generalizationConfidenceRange.y);
     }
 
 
@@ -384,6 +394,7 @@ public class NARSGenome
     private static Vector2 GetTRange() => new(0.51f, 1f);
     private static Vector2 GetTimeProjectionEventRange() => new(0.0000001f, 10f);
     private static Vector2 GetTimeProjectionGoalRange() => new(0.0000001f, 10f);
+    private static Vector2 GetGeneralizationConfidenceRange() => new(0.0000001f, 0.99999f);
     private static Vector2 GetForgettingRateRange() => new(1, 250f);
     private static Vector2Int GetAnticipationWindowRange() => new(1, 30);
     private static Vector2Int GetEventBufferCapacityRange() => new(3, 20);
@@ -604,6 +615,10 @@ public class NARSGenome
         // --- Time Projection Goal ---
         var timeProjectionGoalRange = GetTimeProjectionGoalRange();
         MutateFloat(ref this.personality_parameters.Time_Projection_Goal, timeProjectionGoalRange, CHANCE_TO_REPLACE_PARAM, CHANCE_TO_MUTATE);
+
+        // --- Time Projection Goal ---
+        var generalizationConfidenceRange = GetGeneralizationConfidenceRange();
+        MutateFloat(ref this.personality_parameters.Generalization_Confidence, generalizationConfidenceRange, CHANCE_TO_REPLACE_PARAM, CHANCE_TO_MUTATE);
     }
 
 

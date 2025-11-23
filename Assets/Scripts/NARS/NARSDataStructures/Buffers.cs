@@ -276,7 +276,7 @@ public class TemporalModule
 
         new_statement = CreateContingencyStatement(new_S, new_M, predicate);
 
-        Judgment generalization = new(this.nars, new_statement, new(1.0f,0.99f));
+        Judgment generalization = new(this.nars, new_statement, new(1.0f,this.nars.config.GENERALIZATION_CONFIDENCE));
 
         return generalization;
     }
