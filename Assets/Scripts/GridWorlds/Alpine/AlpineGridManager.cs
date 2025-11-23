@@ -136,7 +136,7 @@ public class AlpineGridManager : MonoBehaviour
 
         _csvPath = Path.Combine(root, $"stats_{stamp}.csv");
         _csv = new StreamWriter(_csvPath, false);
-        _csv.WriteLine("max_table_score,mean_table_score,median_table_score");
+        _csv.WriteLine("max_table_score,mean_table_score,median_table_score,generalization_confidence,K");
 
         _csv.Flush();
 
@@ -178,13 +178,20 @@ public class AlpineGridManager : MonoBehaviour
         if (best.HasValue) maxTable = best.Value.score;
 
         float total_confidence = 0;
+        float total_K = 0;
         foreach(var animat in table.table)
         {
             total_confidence += animat.data.personality_parameters.Generalization_Confidence;
+            total_K += animat.data.personality_parameters.k;
         }
 
-        float avg_confience = 0;
-        if(table.table.Count > 0) avg_confience = total_confidence / table.table.Count;
+        float avg_confidence = 0;
+        float avg_K = 0;
+        if (table.table.Count > 0)
+        {
+            avg_confidence = total_confidence / table.table.Count;
+            avg_K = total_K / table.table.Count;
+        }
 
         // mean (average) and median
         int count = table.Count();
@@ -195,7 +202,8 @@ public class AlpineGridManager : MonoBehaviour
             maxTable.ToString(CultureInfo.InvariantCulture),
             mean.ToString(CultureInfo.InvariantCulture),
             median.ToString(CultureInfo.InvariantCulture),
-            avg_confience.ToString(CultureInfo.InvariantCulture)
+            avg_confidence.ToString(CultureInfo.InvariantCulture),
+            avg_K.ToString(CultureInfo.InvariantCulture)
         );
 
         _csv.WriteLine(line);
